@@ -42,6 +42,7 @@ export default function DashboardPage() {
     sectionsData?.pagination.totalItems,
     cgData?.pagination.totalItems,
   ];
+
   return (
     <div>
       <div className="mb-8">
