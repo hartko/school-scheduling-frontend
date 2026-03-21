@@ -97,12 +97,19 @@ export default function RoomSchedulesPage() {
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="Assign Schedule to Room">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <SelectField
-            label="Room"
-            placeholder="Select a room..."
-            options={rooms.map((r) => ({ value: r.id!, label: `${r.name} — ${r.level} (${r.capacity} seats)` }))}
-            error={errors.room_id?.message}
-            {...register('room_id')}
+          <Controller
+            name="room_id"
+            control={control}
+            render={({ field }) => (
+              <SearchableSelectField
+                label="Room"
+                placeholder="Select a room..."
+                options={rooms.map((r) => ({ value: r.id!, label: `${r.name}` }))}
+                value={field.value}
+                onChange={field.onChange}
+                error={errors.room_id?.message}
+              />
+            )}
           />
           <Controller
             name="schedule_id"
@@ -113,7 +120,7 @@ export default function RoomSchedulesPage() {
                 placeholder="Select a schedule..."
                 options={schedules.map((s) => ({
                   value: s.id!,
-                  label: `${s.day} ${formatTime(s.start_time)} – ${formatTime(s.end_time)}${s.is_break ? " (Break)" : ""}`,
+                  label: s.name,
                 }))}
                 value={field.value}
                 onChange={field.onChange}

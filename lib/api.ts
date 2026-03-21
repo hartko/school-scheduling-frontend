@@ -1,5 +1,5 @@
 // ─── Base config ─────────────────────────────────────────────────────────────
-const BASE = 'http://localhost:4000';
+const BASE = process.env.NEXT_PUBLIC_API_URL;
 
 // Note: room-schedules has /api/ prefix, class-group is singular
 const ENDPOINTS = {

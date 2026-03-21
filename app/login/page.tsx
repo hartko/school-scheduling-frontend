@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { School, Lock, Mail } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import Image from 'next/image';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -24,7 +25,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex" style={{ background: '#f5f5f5' }}>
       {/* Left panel — pink */}
       <div className="hidden lg:flex lg:w-1/2 flex-col items-center justify-center p-12 relative overflow-hidden"
-        style={{ background: 'linear-gradient(145deg, #e91e8c 0%, #c2185b 60%, #880e4f 100%)' }}>
+        style={{ background: '#c3527f' }}>
         {/* Blobs */}
         <div className="absolute top-0 left-0 w-72 h-72 rounded-full opacity-20"
           style={{ background: 'rgba(255,255,255,0.3)', filter: 'blur(60px)', transform: 'translate(-30%, -30%)' }} />
@@ -38,9 +39,14 @@ export default function LoginPage() {
         <div className="relative z-10 text-center">
           <div className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6"
             style={{ background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(12px)' }}>
-            <School className="w-10 h-10 text-white" />
+            <Image
+              src="/images/domi.png"
+              alt="School"
+              width={500}
+              height={300}
+            />
           </div>
-          <h1 className="font-display text-4xl font-bold text-white mb-3">EduSchedule</h1>
+          <h1 className="font-display text-4xl font-bold text-white mb-3">Santa Cruz Institute</h1>
           <p className="text-lg font-light" style={{ color: 'rgba(255,255,255,0.8)' }}>
             School Scheduling System
           </p>
