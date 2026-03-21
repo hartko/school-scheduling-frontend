@@ -1,10 +1,10 @@
 'use client';
-import { useTeachers }       from '@/hooks/useTeachers';
-import { useRooms }          from '@/hooks/useRooms';
-import { useSubjects }       from '@/hooks/useSubjects';
-import { useSchedules }      from '@/hooks/useSchedules';
-import { useSections }       from '@/hooks/useSections';
-import { useClassGroups }    from '@/hooks/useClassGroups';
+import { useTeachers } from '@/hooks/useTeachers';
+import { useRooms } from '@/hooks/useRooms';
+import { useSubjects } from '@/hooks/useSubjects';
+import { useSchedules } from '@/hooks/useSchedules';
+import { useSections } from '@/hooks/useSections';
+import { useClassGroups } from '@/hooks/useClassGroups';
 import { Users, Building2, BookOpen, Clock, Layers, GraduationCap, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 
@@ -17,30 +17,30 @@ interface StatConfig {
 }
 
 const STAT_CONFIG: StatConfig[] = [
-  { label: 'Teachers',     icon: Users,         href: '/teachers',     iconBg: '#fce4ec', iconColor: '#e91e8c' },
-  { label: 'Rooms',        icon: Building2,     href: '/rooms',        iconBg: '#f3e5f5', iconColor: '#9c27b0' },
-  { label: 'Subjects',     icon: BookOpen,      href: '/subjects',     iconBg: '#fce4ec', iconColor: '#c2185b' },
-  { label: 'Schedules',    icon: Clock,         href: '/schedules',    iconBg: '#f8bbd0', iconColor: '#ad1457' },
-  { label: 'Sections',     icon: Layers,        href: '/sections',     iconBg: '#fce4ec', iconColor: '#e91e8c' },
+  { label: 'Teachers', icon: Users, href: '/teachers', iconBg: '#fce4ec', iconColor: '#e91e8c' },
+  { label: 'Rooms', icon: Building2, href: '/rooms', iconBg: '#f3e5f5', iconColor: '#9c27b0' },
+  { label: 'Subjects', icon: BookOpen, href: '/subjects', iconBg: '#fce4ec', iconColor: '#c2185b' },
+  { label: 'Schedules', icon: Clock, href: '/schedules', iconBg: '#f8bbd0', iconColor: '#ad1457' },
+  { label: 'Sections', icon: Layers, href: '/sections', iconBg: '#fce4ec', iconColor: '#e91e8c' },
   { label: 'Class Groups', icon: GraduationCap, href: '/class-groups', iconBg: '#f3e5f5', iconColor: '#7b1fa2' },
 ];
 
 export default function DashboardPage() {
   // Fetch page 1 with limit 1 — we only need `pagination.total` for the count
-  const { data: teachersData }  = useTeachers({ page: 1, limit: 1 });
-  const { data: roomsData }     = useRooms({ page: 1, limit: 1 });
-  const { data: subjectsData }  = useSubjects({ page: 1, limit: 1 });
+  const { data: teachersData } = useTeachers({ page: 1, limit: 1 });
+  const { data: roomsData } = useRooms({ page: 1, limit: 1 });
+  const { data: subjectsData } = useSubjects({ page: 1, limit: 1 });
   const { data: schedulesData } = useSchedules({ page: 1, limit: 1 });
-  const { data: sectionsData }  = useSections({ page: 1, limit: 1 });
-  const { data: cgData }        = useClassGroups({ page: 1, limit: 1 });
+  const { data: sectionsData } = useSections({ page: 1, limit: 1 });
+  const { data: cgData } = useClassGroups({ page: 1, limit: 1 });
 
   const counts = [
-    teachersData?.pagination.total,
-    roomsData?.pagination.total,
-    subjectsData?.pagination.total,
-    schedulesData?.pagination.total,
-    sectionsData?.pagination.total,
-    cgData?.pagination.total,
+    teachersData?.pagination.totalItems,
+    roomsData?.pagination.totalItems,
+    subjectsData?.pagination.totalItems,
+    schedulesData?.pagination.totalItems,
+    sectionsData?.pagination.totalItems,
+    cgData?.pagination.totalItems,
   ];
 
   return (
@@ -53,7 +53,7 @@ export default function DashboardPage() {
       {/* Stat cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
         {STAT_CONFIG.map((s, i) => {
-          const Icon  = s.icon;
+          const Icon = s.icon;
           const count = counts[i];
           return (
             <Link key={s.label} href={s.href}
