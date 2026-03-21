@@ -101,14 +101,14 @@ export default function TeacherSubjectsPage() {
           <SelectField
             label="Teacher"
             placeholder="Select a teacher..."
-            options={teachers.map((t) => ({ value: t.id!, label: `${t.first_name} ${t.last_name} (${t.teacher_code})` }))}
+            options={teachers.map((t) => ({ value: String(t.id!), label: `${t.first_name} ${t.last_name} (${t.teacher_code})` }))}
             error={errors.teacher_id?.message}
             {...register('teacher_id')}
           />
           <SelectField
             label="Subject"
             placeholder="Select a subject..."
-            options={subjects.map((s) => ({ value: s.id!, label: `${s.name} (${s.code})` }))}
+            options={subjects.map((s) => ({ value: String(s.id!), label: `${s.name} (${s.code})` }))}
             error={errors.subject_id?.message}
             {...register('subject_id')}
           />
