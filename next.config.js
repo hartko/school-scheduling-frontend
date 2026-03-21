@@ -1,5 +1,3 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {
-    optimizePackageImports: ['lucide-react']
-};
+const nextConfig = {};
 module.exports = nextConfig;
