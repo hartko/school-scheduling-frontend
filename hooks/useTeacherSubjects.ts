@@ -6,7 +6,7 @@ import type { PaginationParams, TeacherSubjectInput } from '@/lib/schemas';
 export function useTeacherSubjects(params?: PaginationParams) {
   return useQuery({
     queryKey: queryKeys.teacherSubjects.list(params),
-    queryFn:  () => teacherSubjectsApi.getAll(params),
+    queryFn: () => teacherSubjectsApi.getAll(params),
   });
 }
 
@@ -14,15 +14,15 @@ export function useCreateTeacherSubject() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: TeacherSubjectInput) => teacherSubjectsApi.create(data),
-    onSuccess:  () => qc.invalidateQueries({ queryKey: queryKeys.teacherSubjects.all() }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.teacherSubjects.all() }),
   });
 }
 
 export function useDeleteTeacherSubject() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => teacherSubjectsApi.remove(id),
-    onSuccess:  () => qc.invalidateQueries({ queryKey: queryKeys.teacherSubjects.all() }),
+    mutationFn: (id: number) => teacherSubjectsApi.delete(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.teacherSubjects.all() }),
   });
 }
 

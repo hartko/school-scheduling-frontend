@@ -28,7 +28,7 @@ export type LoginInput = z.infer<typeof loginSchema>;
 
 // ─── Teacher ──────────────────────────────────────────────────────────────────
 export const teacherSchema = z.object({
-  id: z.string().optional(),
+  id: z.coerce.number().optional(),
   first_name: z.string().min(1, 'First name is required').max(100),
   middle_name: z.string().max(100).optional().or(z.literal('')),
   last_name: z.string().min(1, 'Last name is required').max(100),
@@ -40,7 +40,7 @@ export type TeacherInput = Omit<Teacher, 'id'>;
 
 // ─── Room ─────────────────────────────────────────────────────────────────────
 export const roomSchema = z.object({
-  id: z.string().optional(),
+  id: z.coerce.number().optional(),
   name: z.string().min(1, 'Room name is required').max(100),
   capacity: z.coerce.number().int().positive('Capacity must be a positive integer'),
   level: z.coerce.number().int().positive('Level must be a positive integer')
@@ -50,7 +50,7 @@ export type RoomInput = Omit<Room, 'id'>;
 
 // ─── Subject ──────────────────────────────────────────────────────────────────
 export const subjectSchema = z.object({
-  id: z.string().optional(),
+  id: z.coerce.number().optional(),
   name: z.string().min(1, 'Subject name is required').max(100),
   code: z.string().min(1, 'Subject code is required').max(20),
 });
@@ -58,21 +58,21 @@ export type Subject = z.infer<typeof subjectSchema>;
 export type SubjectInput = Omit<Subject, 'id'>;
 
 // ─── Schedule ─────────────────────────────────────────────────────────────────
-export const DAY_LABELS: Record<string, string> = {
-  '0': 'Monday',
-  '1': 'Tuesday',
-  '2': 'Wednesday',
-  '3': 'Thursday',
-  '4': 'Friday',
-  '5': 'Saturday',
-  '6': 'Sunday',
+export const DAY_LABELS: Record<number, string> = {
+  0: 'Monday',
+  1: 'Tuesday',
+  2: 'Wednesday',
+  3: 'Thursday',
+  4: 'Friday',
+  5: 'Saturday',
+  6: 'Sunday',
 };
 export const scheduleBaseSchema = z.object({
-  id: z.string().optional(),
+  id: z.coerce.number().optional(),
   start_time: z.string().regex(/^\d{2}:\d{2}$/, 'Time must be HH:MM format'),
   end_time: z.string().regex(/^\d{2}:\d{2}$/, 'Time must be HH:MM format'),
   is_break: z.boolean(),
-  day: z.enum([0, 1, 2, 3, 4, 5, 6]),
+  day: z.coerce.number().int().min(0).max(6, 'Day must be between 0 (Monday) and 6 (Sunday)'),
   name: z.string().min(1, 'Schedule name is required').max(100),
   description: z.string().max(255).optional(),
   schedule_code: z.string().max(20).optional()
@@ -89,7 +89,7 @@ export type ScheduleInput = Omit<Schedule, 'id'>;
 
 // ─── Section ──────────────────────────────────────────────────────────────────
 export const sectionSchema = z.object({
-  id: z.string().optional(),
+  id: z.coerce.number().optional(),
   name: z.string().min(1, 'Section name is required').max(100),
   code: z.string().min(1, 'Section code is required').max(20),
 });
@@ -98,7 +98,7 @@ export type SectionInput = Omit<Section, 'id'>;
 
 // ─── TeacherSubject ───────────────────────────────────────────────────────────
 export const teacherSubjectSchema = z.object({
-  id: z.string().optional(),
+  id: z.coerce.number().optional(),
   teacher_id: z.coerce.number().min(1, 'Teacher is required'),
   subject_id: z.coerce.number().min(1, 'Subject is required'),
 });
@@ -107,7 +107,7 @@ export type TeacherSubjectInput = Omit<TeacherSubject, 'id'>;
 
 // ─── RoomSchedule ─────────────────────────────────────────────────────────────
 export const roomScheduleSchema = z.object({
-  id: z.string().optional(),
+  id: z.coerce.number().optional(),
   room_id: z.coerce.number().min(1, 'Room is required'),
   schedule_id: z.coerce.number().min(1, 'Schedule is required'),
 });
@@ -116,7 +116,7 @@ export type RoomScheduleInput = Omit<RoomSchedule, 'id'>;
 
 // ─── ClassGroup ───────────────────────────────────────────────────────────────
 export const classGroupSchema = z.object({
-  id: z.string().optional(),
+  id: z.coerce.number().optional(),
   teacher_subject_id: z.coerce.number().min(1, 'Teacher Subject is required'),
   room_schedule_id: z.coerce.number().min(1, 'Room Schedule is required'),
   section_id: z.coerce.number().min(1, 'Section is required'),

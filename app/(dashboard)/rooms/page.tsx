@@ -66,7 +66,7 @@ export default function RoomsPage() {
         {isLoading
           ? <div className="flex items-center justify-center py-16 gap-3 text-ink-400"><div className="w-5 h-5 border-2 rounded-full animate-spin" style={{ borderColor: '#e91e8c', borderTopColor: 'transparent' }} />Loading rooms…</div>
           : <DataTable data={(data?.data ?? []) as unknown as Record<string, unknown>[]} columns={columns}
-            searchKeys={['name', 'level'] as never[]} pagination={data?.meta}
+            searchKeys={['name', 'level'] as never[]} pagination={data?.pagination}
             onPageChange={setPage} onLimitChange={(l) => { setLimit(l); setPage(1); }}
             actions={(row) => (<><button className="btn-icon" onClick={() => openEdit(row as unknown as Room)}><Pencil className="w-3.5 h-3.5" /></button><button className="btn-icon" style={{ color: '#ef5350' }} onClick={() => setDeleteTarget(row as unknown as Room)}><Trash2 className="w-3.5 h-3.5" /></button></>)} />}
       </div>

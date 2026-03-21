@@ -21,7 +21,7 @@ export function useCreateSchedule() {
 export function useUpdateSchedule() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<ScheduleInput> }) =>
+    mutationFn: ({ id, data }: { id: number; data: Partial<ScheduleInput> }) =>
       schedulesApi.update(id, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.schedules.all() }),
   });
@@ -30,7 +30,7 @@ export function useUpdateSchedule() {
 export function useDeleteSchedule() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => schedulesApi.delete(id),
+    mutationFn: (id: number) => schedulesApi.delete(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.schedules.all() }),
   });
 }

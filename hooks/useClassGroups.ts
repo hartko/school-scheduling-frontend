@@ -21,7 +21,7 @@ export function useCreateClassGroup() {
 export function useUpdateClassGroup() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<ClassGroupInput> }) =>
+    mutationFn: ({ id, data }: { id: number; data: Partial<ClassGroupInput> }) =>
       classGroupsApi.update(id, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.classGroups.all() }),
   });
@@ -30,7 +30,7 @@ export function useUpdateClassGroup() {
 export function useDeleteClassGroup() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => classGroupsApi.remove(id),
+    mutationFn: (id: number) => classGroupsApi.delete(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.classGroups.all() }),
   });
 }

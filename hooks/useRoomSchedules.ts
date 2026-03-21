@@ -21,7 +21,7 @@ export function useCreateRoomSchedule() {
 export function useDeleteRoomSchedule() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => roomSchedulesApi.remove(id),
+    mutationFn: (id: number) => roomSchedulesApi.delete(id),
     onSuccess:  () => qc.invalidateQueries({ queryKey: queryKeys.roomSchedules.all() }),
   });
 }

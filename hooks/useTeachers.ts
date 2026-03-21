@@ -6,7 +6,7 @@ import type { PaginationParams, TeacherInput } from '@/lib/schemas';
 export function useTeachers(params?: PaginationParams) {
   return useQuery({
     queryKey: queryKeys.teachers.list(params),
-    queryFn:  () => teachersApi.getAll(params),
+    queryFn: () => teachersApi.getAll(params),
   });
 }
 
@@ -14,14 +14,14 @@ export function useCreateTeacher() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: TeacherInput) => teachersApi.create(data),
-    onSuccess:  () => qc.invalidateQueries({ queryKey: queryKeys.teachers.all() }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.teachers.all() }),
   });
 }
 
 export function useUpdateTeacher() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<TeacherInput> }) =>
+    mutationFn: ({ id, data }: { id: number; data: Partial<TeacherInput> }) =>
       teachersApi.update(id, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.teachers.all() }),
   });
@@ -30,8 +30,8 @@ export function useUpdateTeacher() {
 export function useDeleteTeacher() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => teachersApi.remove(id),
-    onSuccess:  () => qc.invalidateQueries({ queryKey: queryKeys.teachers.all() }),
+    mutationFn: (id: number) => teachersApi.delete(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.teachers.all() }),
   });
 }
 

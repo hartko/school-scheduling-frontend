@@ -21,7 +21,7 @@ export function useCreateRoom() {
 export function useUpdateRoom() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<RoomInput> }) =>
+    mutationFn: ({ id, data }: { id: number; data: Partial<RoomInput> }) =>
       roomsApi.update(id, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.rooms.all() }),
   });
@@ -30,7 +30,7 @@ export function useUpdateRoom() {
 export function useDeleteRoom() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => roomsApi.remove(id),
+    mutationFn: (id: number) => roomsApi.delete(id),
     onSuccess:  () => qc.invalidateQueries({ queryKey: queryKeys.rooms.all() }),
   });
 }

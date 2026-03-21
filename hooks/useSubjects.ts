@@ -21,7 +21,7 @@ export function useCreateSubject() {
 export function useUpdateSubject() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<SubjectInput> }) =>
+    mutationFn: ({ id, data }: { id: number; data: Partial<SubjectInput> }) =>
       subjectsApi.update(id, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.subjects.all() }),
   });
@@ -30,7 +30,7 @@ export function useUpdateSubject() {
 export function useDeleteSubject() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => subjectsApi.remove(id),
+    mutationFn: (id: number) => subjectsApi.delete(id),
     onSuccess:  () => qc.invalidateQueries({ queryKey: queryKeys.subjects.all() }),
   });
 }

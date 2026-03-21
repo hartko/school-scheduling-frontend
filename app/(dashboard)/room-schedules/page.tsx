@@ -16,11 +16,11 @@ import { CalendarDays, Plus, Trash2 } from 'lucide-react';
 import { formatTime } from '@/lib/utils';
 import { Controller } from "react-hook-form";
 interface RSRow extends Record<string, unknown> {
-  id: string;
-  room_id: string;
-  schedule_id: string;
+  id: number;
+  room_id: number;
+  schedule_id: number;
   roomName: string;
-  day: string;
+  day: number;
   timeSlot: string;
   isBreak: boolean;
 }
@@ -55,7 +55,7 @@ export default function RoomSchedulesPage() {
       ...rs,
       id: rs.id!,
       roomName: room?.name ?? '—',
-      day: sched?.day ?? '—',
+      day: Number(sched?.day) ?? '—',
       timeSlot: sched ? `${formatTime(sched.start_time)} – ${formatTime(sched.end_time)}` : '—',
       isBreak: sched?.is_break ?? false,
     };
@@ -104,7 +104,7 @@ export default function RoomSchedulesPage() {
               <SearchableSelectField
                 label="Room"
                 placeholder="Select a room..."
-                options={rooms.map((r) => ({ value: r.id!, label: `${r.name}` }))}
+                options={rooms.map((r) => ({ value: String(r.id!), label: `${r.name}` }))}
                 value={field.value}
                 onChange={field.onChange}
                 error={errors.room_id?.message}
@@ -119,7 +119,7 @@ export default function RoomSchedulesPage() {
                 label="Schedule"
                 placeholder="Select a schedule..."
                 options={schedules.map((s) => ({
-                  value: s.id!,
+                  value: String(s.id!),
                   label: s.name,
                 }))}
                 value={field.value}

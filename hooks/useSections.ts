@@ -21,7 +21,7 @@ export function useCreateSection() {
 export function useUpdateSection() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<SectionInput> }) =>
+    mutationFn: ({ id, data }: { id: number; data: Partial<SectionInput> }) =>
       sectionsApi.update(id, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.sections.all() }),
   });
@@ -30,7 +30,7 @@ export function useUpdateSection() {
 export function useDeleteSection() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => sectionsApi.remove(id),
+    mutationFn: (id: number) => sectionsApi.delete(id),
     onSuccess:  () => qc.invalidateQueries({ queryKey: queryKeys.sections.all() }),
   });
 }

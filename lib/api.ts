@@ -48,74 +48,74 @@ function del<T>(url: string) { return request<T>(url, { method: 'DELETE' }); }
 
 // ─── Teachers ─────────────────────────────────────────────────────────────────
 export const teachersApi = {
-  getAll: (params?: { page?: number; limit?: number }) => getAll<Teacher[]>(ENDPOINTS.teachers, params),
-  getById: (id: string) => get<Teacher>(`${ENDPOINTS.teachers}/${id}`),
+  getAll: (params?: { page?: number; limit?: number }) => getAll<PaginatedResponse<Teacher>>(ENDPOINTS.teachers, params),
+  getById: (id: number) => get<Teacher>(`${ENDPOINTS.teachers}/${id}`),
   create: (data: TeacherInput) => post<Teacher>(ENDPOINTS.teachers, data),
-  update: (id: string, data: Partial<TeacherInput>) => patch<Teacher>(`${ENDPOINTS.teachers}/${id}`, data),
-  delete: (id: string) => del<void>(`${ENDPOINTS.teachers}/${id}`),
+  update: (id: number, data: Partial<TeacherInput>) => patch<Teacher>(`${ENDPOINTS.teachers}/${id}`, data),
+  delete: (id: number) => del<void>(`${ENDPOINTS.teachers}/${id}`),
 };
 
 // ─── Rooms ───────────────────────────────────────────────────────────────────
 export const roomsApi = {
-  getAll: (params?: { page?: number; limit?: number }) => getAll<Room[]>(ENDPOINTS.rooms, params),
-  getById: (id: string) => get<Room>(`${ENDPOINTS.rooms}/${id}`),
+  getAll: (params?: { page?: number; limit?: number }) => getAll<PaginatedResponse<Room>>(ENDPOINTS.rooms, params),
+  getById: (id: number) => get<Room>(`${ENDPOINTS.rooms}/${id}`),
   create: (data: RoomInput) => post<Room>(ENDPOINTS.rooms, data),
-  update: (id: string, data: Partial<RoomInput>) => patch<Room>(`${ENDPOINTS.rooms}/${id}`, data),
-  delete: (id: string) => del<void>(`${ENDPOINTS.rooms}/${id}`),
+  update: (id: number, data: Partial<RoomInput>) => patch<Room>(`${ENDPOINTS.rooms}/${id}`, data),
+  delete: (id: number) => del<void>(`${ENDPOINTS.rooms}/${id}`),
 };
 
 // ─── Subjects ────────────────────────────────────────────────────────────────
 export const subjectsApi = {
-  getAll: (params?: { page?: number; limit?: number }) => getAll<Subject[]>(ENDPOINTS.subjects, params),
-  getById: (id: string) => get<Subject>(`${ENDPOINTS.subjects}/${id}`),
+  getAll: (params?: { page?: number; limit?: number }) => getAll<PaginatedResponse<Subject>>(ENDPOINTS.subjects, params),
+  getById: (id: number) => get<Subject>(`${ENDPOINTS.subjects}/${id}`),
   create: (data: SubjectInput) => post<Subject>(ENDPOINTS.subjects, data),
-  update: (id: string, data: Partial<SubjectInput>) => patch<Subject>(`${ENDPOINTS.subjects}/${id}`, data),
-  delete: (id: string) => del<void>(`${ENDPOINTS.subjects}/${id}`),
+  update: (id: number, data: Partial<SubjectInput>) => patch<Subject>(`${ENDPOINTS.subjects}/${id}`, data),
+  delete: (id: number) => del<void>(`${ENDPOINTS.subjects}/${id}`),
 };
 
 // ─── Schedules ───────────────────────────────────────────────────────────────
 export const schedulesApi = {
-  getAll: (params?: { page?: number; limit?: number }) => getAll<Schedule[]>(ENDPOINTS.schedules, params),
-  getById: (id: string) => get<Schedule>(`${ENDPOINTS.schedules}/${id}`),
+  getAll: (params?: { page?: number; limit?: number }) => getAll<PaginatedResponse<Schedule>>(ENDPOINTS.schedules, params),
+  getById: (id: number) => get<Schedule>(`${ENDPOINTS.schedules}/${id}`),
   create: (data: ScheduleInput) => post<Schedule>(ENDPOINTS.schedules, data),
-  update: (id: string, data: Partial<ScheduleInput>) => patch<Schedule>(`${ENDPOINTS.schedules}/${id}`, data),
-  delete: (id: string) => del<void>(`${ENDPOINTS.schedules}/${id}`),
+  update: (id: number, data: Partial<ScheduleInput>) => patch<Schedule>(`${ENDPOINTS.schedules}/${id}`, data),
+  delete: (id: number) => del<void>(`${ENDPOINTS.schedules}/${id}`),
 };
 
 // ─── Sections ────────────────────────────────────────────────────────────────
 export const sectionsApi = {
-  getAll: (params?: { page?: number; limit?: number }) => getAll<Section[]>(ENDPOINTS.sections, params),
-  getById: (id: string) => get<Section>(`${ENDPOINTS.sections}/${id}`),
+  getAll: (params?: { page?: number; limit?: number }) => getAll<PaginatedResponse<Section>>(ENDPOINTS.sections, params),
+  getById: (id: number) => get<Section>(`${ENDPOINTS.sections}/${id}`),
   create: (data: SectionInput) => post<Section>(ENDPOINTS.sections, data),
-  update: (id: string, data: Partial<SectionInput>) => patch<Section>(`${ENDPOINTS.sections}/${id}`, data),
-  delete: (id: string) => del<void>(`${ENDPOINTS.sections}/${id}`),
+  update: (id: number, data: Partial<SectionInput>) => patch<Section>(`${ENDPOINTS.sections}/${id}`, data),
+  delete: (id: number) => del<void>(`${ENDPOINTS.sections}/${id}`),
 };
 
 // ─── Teacher Subjects ─────────────────────────────────────────────────────────
 export const teacherSubjectsApi = {
-  getAll: (params?: { page?: number; limit?: number }) => getAll<TeacherSubject[]>(ENDPOINTS.teacherSubjects, params),
-  getById: (id: string) => get<TeacherSubject>(`${ENDPOINTS.teacherSubjects}/${id}`),
+  getAll: (params?: { page?: number; limit?: number }) => getAll<PaginatedResponse<TeacherSubject>>(ENDPOINTS.teacherSubjects, params),
+  getById: (id: number) => get<TeacherSubject>(`${ENDPOINTS.teacherSubjects}/${id}`),
   create: (data: TeacherSubjectInput) => post<TeacherSubject>(ENDPOINTS.teacherSubjects, data),
-  update: (id: string, data: Partial<TeacherSubjectInput>) => patch<TeacherSubject>(`${ENDPOINTS.teacherSubjects}/${id}`, data),
-  delete: (id: string) => del<void>(`${ENDPOINTS.teacherSubjects}/${id}`),
+  update: (id: number, data: Partial<TeacherSubjectInput>) => patch<TeacherSubject>(`${ENDPOINTS.teacherSubjects}/${id}`, data),
+  delete: (id: number) => del<void>(`${ENDPOINTS.teacherSubjects}/${id}`),
 };
 
 // ─── Room Schedules (/api/room-schedules) ─────────────────────────────────────
 export const roomSchedulesApi = {
-  getAll: (params?: { page?: number; limit?: number }) => getAll<RoomSchedule[]>(ENDPOINTS.roomSchedules, params),
-  getById: (id: string) => get<RoomSchedule>(`${ENDPOINTS.roomSchedules}/${id}`),
+  getAll: (params?: { page?: number; limit?: number }) => getAll<PaginatedResponse<RoomSchedule>>(ENDPOINTS.roomSchedules, params),
+  getById: (id: number) => get<RoomSchedule>(`${ENDPOINTS.roomSchedules}/${id}`),
   create: (data: RoomScheduleInput) => post<RoomSchedule>(ENDPOINTS.roomSchedules, data),
-  update: (id: string, data: Partial<RoomScheduleInput>) => patch<RoomSchedule>(`${ENDPOINTS.roomSchedules}/${id}`, data),
-  delete: (id: string) => del<void>(`${ENDPOINTS.roomSchedules}/${id}`),
+  update: (id: number, data: Partial<RoomScheduleInput>) => patch<RoomSchedule>(`${ENDPOINTS.roomSchedules}/${id}`, data),
+  delete: (id: number) => del<void>(`${ENDPOINTS.roomSchedules}/${id}`),
 };
 
 // ─── Class Groups (/class-group singular) ─────────────────────────────────────
 export const classGroupsApi = {
-  getAll: (params?: { page?: number; limit?: number }) => getAll<ClassGroup[]>(ENDPOINTS.classGroups, params),
-  getById: (id: string) => get<ClassGroup>(`${ENDPOINTS.classGroups}/${id}`),
+  getAll: (params?: { page?: number; limit?: number }) => getAll<PaginatedResponse<ClassGroup>>(ENDPOINTS.classGroups, params),
+  getById: (id: number) => get<ClassGroup>(`${ENDPOINTS.classGroups}/${id}`),
   create: (data: ClassGroupInput) => post<ClassGroup>(ENDPOINTS.classGroups, data),
-  update: (id: string, data: Partial<ClassGroupInput>) => patch<ClassGroup>(`${ENDPOINTS.classGroups}/${id}`, data),
-  delete: (id: string) => del<void>(`${ENDPOINTS.classGroups}/${id}`),
+  update: (id: number, data: Partial<ClassGroupInput>) => patch<ClassGroup>(`${ENDPOINTS.classGroups}/${id}`, data),
+  delete: (id: number) => del<void>(`${ENDPOINTS.classGroups}/${id}`),
 };
 
 // ─── Local types (mirrors lib/schemas.ts) ─────────────────────────────────────
@@ -124,6 +124,16 @@ import type {
   TeacherSubject, RoomSchedule, ClassGroup
 } from './schemas';
 
+type PaginatedResponse<T> = {
+  data: T[];
+  pagination: {
+    totalItems: number;
+    currentPage: number;
+    itemsPerPage: number;
+    itemCount: number;
+    totalPages: number;
+  };
+};
 type TeacherInput = Omit<Teacher, 'id'>;
 type RoomInput = Omit<Room, 'id'>;
 type SubjectInput = Omit<Subject, 'id'>;
