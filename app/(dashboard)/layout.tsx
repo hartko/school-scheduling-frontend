@@ -1,4 +1,5 @@
-import { useState } from 'react';
+'use client';
+import { use, useState } from 'react';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Navbar } from '@/components/layout/Navbar';
 import { cn } from '@/lib/utils';
