@@ -73,7 +73,7 @@ export default function LoginPage() {
               style={{ background: 'linear-gradient(135deg, #e91e8c, #c2185b)' }}>
               <School className="w-7 h-7 text-white" />
             </div>
-            <h1 className="font-display text-2xl font-bold" style={{ color: '#333' }}>EduSchedule</h1>
+            <h1 className="font-display text-2xl font-bold" style={{ color: '#333' }}>SCI</h1>
           </div>
 
           <h2 className="font-display text-2xl font-bold mb-1" style={{ color: '#333333' }}>Welcome back</h2>

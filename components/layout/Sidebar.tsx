@@ -44,7 +44,7 @@ export function Sidebar() {
             <School className="w-5 h-5 text-white" />
           </div>
           <div>
-            <p className="font-display text-base font-bold text-white leading-tight">EduSchedule</p>
+            <p className="font-display text-base font-bold text-white leading-tight">SCI</p>
             <p className="text-xs font-mono" style={{ color: 'rgba(255,255,255,0.6)' }}>v1.0</p>
           </div>
         </div>

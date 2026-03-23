@@ -1,4 +1,4 @@
-# EduSchedule — School Scheduling System
+# School Scheduling System
 
 A production-grade Next.js 14 (TypeScript) frontend for managing school schedules.
 

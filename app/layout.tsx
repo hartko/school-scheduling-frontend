@@ -3,7 +3,7 @@ import './globals.css';
 import { QueryProvider } from '@/providers/query-provider';
 
 export const metadata: Metadata = {
-  title: 'EduSchedule — School Scheduling System',
+  title: 'School Scheduling System',
   description: 'Manage teachers, rooms, schedules and class groups',
 };
 
