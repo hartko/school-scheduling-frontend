@@ -64,10 +64,10 @@ export function MassUpload<T>({ open, onClose, onUpload, templateFields, entityN
     <Modal open={open} onClose={handleClose} title={`Mass Upload — ${entityName}`} size="lg">
       <div className="space-y-4">
         {/* Template Download */}
-        <div className="flex items-center justify-between p-3 bg-ink-50 rounded-lg border border-ink-200">
-          <div>
+        <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-ink-50 rounded-lg border border-ink-200">
+          <div className="min-w-0">
             <p className="text-sm font-medium text-ink-700">CSV Template</p>
-            <p className="text-xs text-ink-400 mt-0.5">Fields: {templateFields.join(', ')}</p>
+            <p className="text-xs text-ink-400 mt-0.5 break-words">Fields: {templateFields.join(', ')}</p>
           </div>
           <Button variant="secondary" size="sm" icon={<Download className="w-3.5 h-3.5" />} onClick={downloadTemplate}>
             Template

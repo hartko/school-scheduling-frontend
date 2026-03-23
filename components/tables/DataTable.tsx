@@ -93,7 +93,7 @@ export function DataTable<T extends Record<string, unknown>>({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center gap-3">
-        <div className="relative flex-1 max-w-xs">
+        <div className="relative flex-1 sm:max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink-400 pointer-events-none" />
           <input
             className="form-input pl-9 text-sm"
@@ -102,10 +102,11 @@ export function DataTable<T extends Record<string, unknown>>({
             onChange={(e) => { setSearch(e.target.value); setClientPage(1); }}
           />
         </div>
-        <span className="label-text ml-auto">{totalRecords} record{totalRecords !== 1 ? 's' : ''}</span>
+        <span className="label-text ml-auto whitespace-nowrap">{totalRecords} record{totalRecords !== 1 ? 's' : ''}</span>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-ink-200 bg-white">
+      {/* Desktop table */}
+      <div className="hidden sm:block overflow-x-auto rounded-lg border border-ink-200 bg-white">
         <table className="data-table w-full min-w-full">
           <thead>
             <tr>
@@ -148,6 +149,33 @@ export function DataTable<T extends Record<string, unknown>>({
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile cards */}
+      <div className="sm:hidden space-y-2">
+        {displayRows.length === 0 ? (
+          <div className="card p-4 text-center text-ink-400 text-sm italic">{emptyMessage}</div>
+        ) : (
+          displayRows.map((row, i) => (
+            <div key={String(row.id ?? i)} className="card p-4 animate-fade-in">
+              <div className="space-y-2">
+                {columns.map((col) => (
+                  <div key={col.key} className="flex justify-between items-start gap-3 text-sm">
+                    <span className="label-text flex-shrink-0">{col.header}</span>
+                    <span className="text-right text-ink-800 break-all">
+                      {col.render ? col.render(row[col.key], row) : String(row[col.key] ?? '—')}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              {actions && (
+                <div className="flex items-center gap-1 mt-3 pt-3 border-t border-ink-100">
+                  {actions(row)}
+                </div>
+              )}
+            </div>
+          ))
+        )}
       </div>
 
       <div className="flex items-center justify-between gap-3 flex-wrap">

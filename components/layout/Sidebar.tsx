@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   Users, Building2, BookOpen, Clock, Layers,
-  UserCheck, CalendarDays, GraduationCap, LogOut, School
+  UserCheck, CalendarDays, GraduationCap, LogOut, School, X
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -11,42 +11,54 @@ const navGroups = [
   {
     label: 'Resources',
     items: [
-      { href: '/teachers',  label: 'Teachers',  icon: Users },
-      { href: '/rooms',     label: 'Rooms',     icon: Building2 },
-      { href: '/subjects',  label: 'Subjects',  icon: BookOpen },
+      { href: '/teachers', label: 'Teachers', icon: Users },
+      { href: '/rooms', label: 'Rooms', icon: Building2 },
+      { href: '/subjects', label: 'Subjects', icon: BookOpen },
       { href: '/schedules', label: 'Schedules', icon: Clock },
-      { href: '/sections',  label: 'Sections',  icon: Layers },
+      { href: '/sections', label: 'Sections', icon: Layers },
     ],
   },
   {
     label: 'Assignments',
     items: [
       { href: '/teacher-subjects', label: 'Teacher Subjects', icon: UserCheck },
-      { href: '/room-schedules',   label: 'Room Schedules',   icon: CalendarDays },
-      { href: '/class-groups',     label: 'Class Groups',     icon: GraduationCap },
+      { href: '/room-schedules', label: 'Room Schedules', icon: CalendarDays },
+      { href: '/class-groups', label: 'Class Groups', icon: GraduationCap },
     ],
   },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+  onNavClick?: () => void;
+}
+
+export function Sidebar({ onNavClick }: SidebarProps) {
   const pathname = usePathname();
 
   return (
     <aside
-      className="w-60 min-h-screen flex flex-col fixed left-0 top-0 z-40"
+      className="w-60 h-full flex flex-col"
       style={{ background: '#353232' }}
     >
       {/* Logo */}
       <div className="px-5 py-5" style={{ borderBottom: '1px solid rgba(255,255,255,0.15)' }}>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
             style={{ background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(8px)' }}>
             <School className="w-5 h-5 text-white" />
           </div>
-          <div>
+          <div className="flex-1">
             <p className="font-display text-base font-bold text-white leading-tight">SCI</p>
             <p className="text-xs font-mono" style={{ color: 'rgba(255,255,255,0.6)' }}>v1.0</p>
           </div>
+          <button
+            onClick={onNavClick}
+            className="md:hidden p-1.5 rounded-lg transition-colors"
+            style={{ color: 'rgba(255,255,255,0.6)' }}
+            aria-label="Close menu"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
       </div>
 
@@ -64,7 +76,7 @@ export function Sidebar() {
                 const active = pathname === item.href;
                 return (
                   <li key={item.href}>
-                    <Link href={item.href} className={cn('sidebar-link', active && 'active')}>
+                    <Link href={item.href} className={cn('sidebar-link', active && 'active')} onClick={onNavClick}>
                       <Icon className="w-4 h-4 flex-shrink-0" />
                       {item.label}
                     </Link>
@@ -88,7 +100,7 @@ export function Sidebar() {
             <p className="text-xs truncate" style={{ color: 'rgba(255,255,255,0.55)' }}>admin@school.edu</p>
           </div>
         </div>
-        <Link href="/login" className="sidebar-link">
+        <Link href="/login" className="sidebar-link" onClick={onNavClick}>
           <LogOut className="w-4 h-4" />
           Sign Out
         </Link>

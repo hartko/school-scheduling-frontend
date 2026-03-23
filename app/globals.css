@@ -31,7 +31,7 @@
 
 @layer components {
   .page-title {
-    @apply font-display text-3xl font-bold tracking-tight;
+    @apply font-display text-2xl sm:text-3xl font-bold tracking-tight;
     color: #333333;
   }
   .section-title {
@@ -162,7 +162,7 @@
     background: rgba(51,51,51,0.45);
   }
   .modal-box {
-    @apply rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto;
+    @apply rounded-2xl w-full max-h-[90vh] overflow-y-auto mx-2 sm:mx-0;
     background: #ffffff;
     border: 1px solid #eeeeee;
     box-shadow: 0 20px 60px rgba(233,30,140,0.12), 0 4px 16px rgba(0,0,0,0.08);

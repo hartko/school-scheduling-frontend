@@ -112,7 +112,7 @@ export default function TeachersPage() {
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Edit Teacher' : 'Add Teacher'}>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <TextField label="First Name" error={errors.first_name?.message}  {...register('first_name')} />
             <TextField label="Middle Name" error={errors.middle_name?.message} {...register('middle_name')} />
           </div>

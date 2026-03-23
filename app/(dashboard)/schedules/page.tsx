@@ -86,7 +86,7 @@ export default function SchedulesPage() {
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Edit Schedule' : 'Add Schedule'}>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <SelectField label="Day" options={Object.entries(DAY_LABELS).map(([value, label]) => ({ value: String(value), label }))} error={errors.day?.message} {...register('day')} />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <TextField label="Start Time" type="time" error={errors.start_time?.message} {...register('start_time')} />
             <TextField label="End Time" type="time" error={errors.end_time?.message}   {...register('end_time')} />
           </div>

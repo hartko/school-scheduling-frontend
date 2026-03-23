@@ -23,13 +23,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         'md:translate-x-0',
         mobileOpen ? 'translate-x-0' : '-translate-x-full'
       )}>
-        <Sidebar />
+        <Sidebar onNavClick={() => setMobileOpen(false)} />
       </div>
 
       {/* Main content */}
       <div className="md:pl-60 flex flex-col min-h-screen">
         <Navbar onMenuToggle={() => setMobileOpen((o) => !o)} />
-        <main className="flex-1 p-6 animate-fade-in">
+        <main className="flex-1 p-4 sm:p-6 animate-fade-in">
           {children}
         </main>
       </div>

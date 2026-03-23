@@ -9,7 +9,7 @@ interface PageHeaderProps {
 
 export function PageHeader({ title, description, actions, icon }: PageHeaderProps) {
   return (
-    <div className="flex items-start justify-between gap-4 mb-6">
+    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-6">
       <div className="flex items-center gap-4">
         {icon && (
           <div className="w-11 h-11 bg-accent/10 rounded-xl flex items-center justify-center text-accent flex-shrink-0">
@@ -23,7 +23,11 @@ export function PageHeader({ title, description, actions, icon }: PageHeaderProp
           )}
         </div>
       </div>
-      {actions && <div className="flex items-center gap-2 flex-shrink-0">{actions}</div>}
+      {actions && (
+        <div className="flex items-center gap-2 flex-wrap sm:flex-shrink-0">
+          {actions}
+        </div>
+      )}
     </div>
   );
 }
