@@ -84,7 +84,7 @@ export default function LoginPage() {
               <label className="form-label">Email Address</label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: '#bdbdbd' }} />
-                <input type="email" className="form-input pl-10" placeholder="admin@school.edu" {...register('email')} />
+                <input type="email" className="form-input pl-10" placeholder="admin@sci.edu" {...register('email')} />
               </div>
               {errors.email && <p className="form-error">{errors.email.message}</p>}
             </div>

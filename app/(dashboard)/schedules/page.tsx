@@ -67,7 +67,7 @@ export default function SchedulesPage() {
 
       <div className="card p-4">
         {isLoading
-          ? <div className="flex items-center justify-center py-16 gap-3 text-ink-400"><div className="w-5 h-5 border-2 rounded-full animate-spin" style={{ borderColor: '#e91e8c', borderTopColor: 'transparent' }} />Loading schedules…</div>
+          ? <div className="flex items-center justify-center py-16 gap-3 text-ink-400"><img src="/images/domi.png" alt="Loading" className="w-16 h-16 object-contain animate-pulse" />Loading schedules…</div>
           : <DataTable
               data={(data?.data ?? []) as unknown as Record<string, unknown>[]}
               columns={columns}

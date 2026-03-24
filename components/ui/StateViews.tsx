@@ -1,9 +1,12 @@
-import { Loader2, AlertCircle, RefreshCw } from 'lucide-react';
+import { AlertCircle, RefreshCw } from 'lucide-react';
+import Image from 'next/image';
 
 export function LoadingState({ message = 'Loading...' }: { message?: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 gap-3">
-      <Loader2 className="w-7 h-7 animate-spin" style={{ color: '#e91e8c' }} />
+      <div className="w-24 h-24 animate-pulse">
+        <Image src="/images/domi.png" alt="Loading" width={96} height={96} className="w-full h-full object-contain" />
+      </div>
       <p className="text-sm font-mono" style={{ color: '#9e9e9e' }}>{message}</p>
     </div>
   );

@@ -3,9 +3,10 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   Users, Building2, BookOpen, Clock, Layers,
-  UserCheck, CalendarDays, GraduationCap, LogOut, School, X
+  UserCheck, CalendarDays, GraduationCap, LogOut, X
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import Image from 'next/image';
 
 const navGroups = [
   {
@@ -43,9 +44,9 @@ export function Sidebar({ onNavClick }: SidebarProps) {
       {/* Logo */}
       <div className="px-5 py-5" style={{ borderBottom: '1px solid rgba(255,255,255,0.15)' }}>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+          <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0"
             style={{ background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(8px)' }}>
-            <School className="w-5 h-5 text-white" />
+            <Image src="/images/domi.png" alt="SCI" width={40} height={40} className="w-full h-full object-cover" />
           </div>
           <div className="flex-1">
             <p className="font-display text-base font-bold text-white leading-tight">SCI</p>
@@ -97,7 +98,7 @@ export function Sidebar({ onNavClick }: SidebarProps) {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-white truncate">Admin</p>
-            <p className="text-xs truncate" style={{ color: 'rgba(255,255,255,0.55)' }}>admin@school.edu</p>
+            <p className="text-xs truncate" style={{ color: 'rgba(255,255,255,0.55)' }}>admin@sci.edu</p>
           </div>
         </div>
         <Link href="/login" className="sidebar-link" onClick={onNavClick}>

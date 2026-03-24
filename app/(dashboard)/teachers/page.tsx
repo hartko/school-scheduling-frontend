@@ -89,7 +89,7 @@ export default function TeachersPage() {
       <div className="card p-4">
         {isLoading ? (
           <div className="flex items-center justify-center py-16 gap-3 text-ink-400">
-            <div className="w-5 h-5 border-2 rounded-full animate-spin" style={{ borderColor: '#e91e8c', borderTopColor: 'transparent' }} />
+            <img src="/images/domi.png" alt="Loading" className="w-16 h-16 object-contain animate-pulse" />
             Loading teachers…
           </div>
         ) : (
