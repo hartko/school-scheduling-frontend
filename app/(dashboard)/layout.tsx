@@ -2,12 +2,14 @@
 import { useState } from 'react';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Navbar } from '@/components/layout/Navbar';
+import { BreadcrumbProvider } from '@/context/BreadcrumbContext';
 import { cn } from '@/lib/utils';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
+    <BreadcrumbProvider>
     <div className="min-h-screen bg-ink-50">
       {/* Mobile overlay */}
       {mobileOpen && (
@@ -34,5 +36,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </main>
       </div>
     </div>
+    </BreadcrumbProvider>
   );
 }

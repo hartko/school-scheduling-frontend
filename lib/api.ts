@@ -76,10 +76,20 @@ export const subjectsApi = {
 // ─── Schedules ───────────────────────────────────────────────────────────────
 export const schedulesApi = {
   getAll: (params?: { page?: number; limit?: number }) => getAll<PaginatedResponse<Schedule>>(ENDPOINTS.schedules, params),
-  getById: (id: number) => get<Schedule>(`${ENDPOINTS.schedules}/${id}`),
-  create: (data: ScheduleInput) => post<Schedule>(ENDPOINTS.schedules, data),
-  update: (id: number, data: Partial<ScheduleInput>) => patch<Schedule>(`${ENDPOINTS.schedules}/${id}`, data),
+  getById: (id: number) => get<ScheduleDetail>(`${ENDPOINTS.schedules}/${id}`),
+  create: (data: ScheduleFormInput) => post<ScheduleDetail>(ENDPOINTS.schedules, data),
+  update: (id: number, data: Partial<ScheduleFormInput>) => patch<ScheduleDetail>(`${ENDPOINTS.schedules}/${id}`, data),
   delete: (id: number) => del<void>(`${ENDPOINTS.schedules}/${id}`),
+};
+
+// ─── Schedule Times ───────────────────────────────────────────────────────────
+export const scheduleTimesApi = {
+  create: (scheduleId: number, data: Omit<ScheduleTime, 'id' | 'schedule_id'>) =>
+    post<ScheduleTime>(`${ENDPOINTS.schedules}/${scheduleId}/times`, data),
+  update: (scheduleId: number, id: number, data: Partial<Omit<ScheduleTime, 'id' | 'schedule_id'>>) =>
+    patch<ScheduleTime>(`${ENDPOINTS.schedules}/${scheduleId}/times/${id}`, data),
+  delete: (scheduleId: number, id: number) =>
+    del<void>(`${ENDPOINTS.schedules}/${scheduleId}/times/${id}`),
 };
 
 // ─── Sections ────────────────────────────────────────────────────────────────
@@ -121,7 +131,7 @@ export const classGroupsApi = {
 // ─── Local types (mirrors lib/schemas.ts) ─────────────────────────────────────
 import type {
   Teacher, Room, Subject, Schedule, Section,
-  TeacherSubject, RoomSchedule, ClassGroup
+  TeacherSubject, RoomSchedule, ClassGroup, ScheduleDetail, ScheduleTime, ScheduleFormInput
 } from './schemas';
 
 type PaginatedResponse<T> = {
@@ -137,7 +147,6 @@ type PaginatedResponse<T> = {
 type TeacherInput = Omit<Teacher, 'id'>;
 type RoomInput = Omit<Room, 'id'>;
 type SubjectInput = Omit<Subject, 'id'>;
-type ScheduleInput = Omit<Schedule, 'id'>;
 type SectionInput = Omit<Section, 'id'>;
 type TeacherSubjectInput = Omit<TeacherSubject, 'id'>;
 type RoomScheduleInput = Omit<RoomSchedule, 'id'>;

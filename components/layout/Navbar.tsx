@@ -1,24 +1,51 @@
 'use client';
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Bell, Menu, ChevronRight, Home } from 'lucide-react';
+import { Bell, Menu, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useBreadcrumb } from '@/context/BreadcrumbContext';
 
-const routeLabels: Record<string, string> = {
-  teachers: 'Teachers',
-  rooms: 'Rooms',
-  subjects: 'Subjects',
-  schedules: 'Schedules',
-  sections: 'Sections',
+const sectionLabels: Record<string, string> = {
+  teachers:         'Teachers',
+  rooms:            'Rooms',
+  subjects:         'Subjects',
+  schedules:        'Schedules',
+  sections:         'Sections',
   'teacher-subjects': 'Teacher Subjects',
   'room-schedules': 'Room Schedules',
-  'class-groups': 'Class Groups',
+  'class-groups':   'Class Groups',
 };
+
+const skipSegments = new Set(['show']);
+
+const actionLabels: Record<string, string> = {
+  create: 'New',
+  edit:   'Edit',
+};
+
+function buildCrumbs(segments: string[], dynamicLabels: Record<string, string>) {
+  const crumbs: { label: string; href: string }[] = [];
+  let path = '';
+  for (const seg of segments) {
+    path += `/${seg}`;
+    if (skipSegments.has(seg)) continue;
+    if (/^\d+$/.test(seg)) {
+      // Use the dynamic label registered by the page (e.g. schedule name), skip if none
+      const dynamic = dynamicLabels[seg];
+      if (dynamic) crumbs.push({ label: dynamic, href: path });
+      continue;
+    }
+    crumbs.push({ label: sectionLabels[seg] ?? actionLabels[seg] ?? seg, href: path });
+  }
+  return crumbs;
+}
 
 interface NavbarProps { onMenuToggle?: () => void; }
 
 export function Navbar({ onMenuToggle }: NavbarProps) {
   const pathname = usePathname();
-  const segments = pathname.split('/').filter(Boolean);
+  const { labels } = useBreadcrumb();
+  const crumbs = buildCrumbs(pathname.split('/').filter(Boolean), labels);
 
   return (
     <header className="h-14 flex items-center px-5 gap-4 sticky top-0 z-30"
@@ -28,17 +55,28 @@ export function Navbar({ onMenuToggle }: NavbarProps) {
       </button>
 
       {/* Breadcrumb */}
-      <nav className="flex items-center gap-1.5 text-sm flex-1 min-w-0">
-        <Home className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#bdbdbd' }} />
-        {segments.map((seg, i) => (
-          <span key={seg} className="flex items-center gap-1.5 min-w-0">
-            <ChevronRight className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#e0e0e0' }} />
-            <span className="truncate" style={{ color: i === segments.length - 1 ? '#333333' : '#9e9e9e', fontWeight: i === segments.length - 1 ? 600 : 400 }}>
-              {routeLabels[seg] ?? seg}
-            </span>
-          </span>
-        ))}
-        {segments.length === 0 && <span style={{ color: '#333333', fontWeight: 600 }}>Dashboard</span>}
+      <nav className="flex items-center gap-1.5 flex-1 min-w-0">
+        {crumbs.length === 0
+          ? <span className="text-sm font-semibold" style={{ color: '#333' }}>Dashboard</span>
+          : crumbs.map((crumb, i) => {
+              const isLast = i === crumbs.length - 1;
+              return (
+                <span key={crumb.href} className="flex items-center gap-1.5 min-w-0">
+                  {i > 0 && <ChevronRight className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#e91e8c', opacity: 0.5 }} />}
+                  {isLast ? (
+                    <span className="text-sm font-semibold truncate" style={{ color: '#e91e8c' }}>
+                      {crumb.label}
+                    </span>
+                  ) : (
+                    <Link href={crumb.href} className="text-sm font-medium truncate transition-colors hover:text-pink-600"
+                      style={{ color: '#757575' }}>
+                      {crumb.label}
+                    </Link>
+                  )}
+                </span>
+              );
+            })
+        }
       </nav>
 
       {/* Actions */}

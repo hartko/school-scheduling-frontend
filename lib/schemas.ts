@@ -78,6 +78,14 @@ export const scheduleBaseSchema = z.object({
   schedule_code: z.string().max(20).optional()
 });
 
+// Lightweight schema for create/edit form (new separated structure)
+export const scheduleFormSchema = z.object({
+  name: z.string().min(1, 'Schedule name is required').max(100),
+  schedule_code: z.string().max(20).optional().or(z.literal('')),
+  description: z.string().max(255).optional().or(z.literal('')),
+});
+export type ScheduleFormInput = z.infer<typeof scheduleFormSchema>;
+
 // ZodEffects — with cross-field validation (cannot .omit())
 export const scheduleSchema = scheduleBaseSchema.refine(
   (d) => d.start_time < d.end_time,
@@ -86,6 +94,35 @@ export const scheduleSchema = scheduleBaseSchema.refine(
 
 export type Schedule = z.infer<typeof scheduleSchema>;
 export type ScheduleInput = Omit<Schedule, 'id'>;
+
+// ─── ScheduleTime ─────────────────────────────────────────────────────────────
+export interface ScheduleTime {
+  id: number;
+  schedule_id: number;
+  start_time: string;
+  end_time: string;
+  is_break: boolean;
+  day: number;
+}
+
+export const scheduleTimeFormSchema = z.object({
+  start_time: z.string().regex(/^\d{2}:\d{2}$/, 'Must be HH:MM'),
+  end_time: z.string().regex(/^\d{2}:\d{2}$/, 'Must be HH:MM'),
+  is_break: z.boolean(),
+  day: z.coerce.number().int().min(0).max(6),
+}).refine((d) => d.start_time < d.end_time, {
+  message: 'End time must be after start time',
+  path: ['end_time'],
+});
+export type ScheduleTimeFormInput = z.infer<typeof scheduleTimeFormSchema>;
+
+export interface ScheduleDetail {
+  id: number;
+  name: string;
+  description?: string;
+  schedule_code?: string;
+  scheduleTimes: ScheduleTime[];
+}
 
 // ─── Section ──────────────────────────────────────────────────────────────────
 export const sectionSchema = z.object({
