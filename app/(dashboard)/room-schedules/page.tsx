@@ -13,6 +13,7 @@ import { SearchableSelectField } from '@/components/ui/SearchableSelectField'
 import { Button } from '@/components/ui/Button';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { CalendarDays, Plus, Trash2 } from 'lucide-react';
+import Link from 'next/link';
 import { formatTime } from '@/lib/utils';
 import { Controller } from "react-hook-form";
 interface RSRow extends Record<string, unknown> {
@@ -74,7 +75,11 @@ export default function RoomSchedulesPage() {
   return (
     <>
       <PageHeader title="Room Schedules" description="Assign time slots to rooms" icon={<CalendarDays className="w-5 h-5" />}
-        actions={<Button size="sm" icon={<Plus className="w-3.5 h-3.5" />} onClick={() => { reset({}); setModalOpen(true); }}>Assign Schedule</Button>}
+        actions={
+          <Link href="/room-schedules/create">
+            <Button size="sm" icon={<Plus className="w-3.5 h-3.5" />}>Assign Room</Button>
+          </Link>
+        }
       />
       {error && <div className="mb-4 px-4 py-3 rounded-lg text-sm" style={{ background: '#fce4ec', color: '#c2185b', border: '1px solid #f48fb1' }}>{(error as Error).message}</div>}
       <div className="card p-4">

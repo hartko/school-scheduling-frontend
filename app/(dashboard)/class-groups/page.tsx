@@ -17,6 +17,7 @@ import { SelectField } from '@/components/ui/SelectField';
 import { Button } from '@/components/ui/Button';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { GraduationCap, Plus, Pencil, Trash2 } from 'lucide-react';
+import Link from 'next/link';
 import { formatTime } from '@/lib/utils';
 
 interface CGRow extends Record<string, unknown> {
@@ -129,7 +130,11 @@ export default function ClassGroupsPage() {
   return (
     <>
       <PageHeader title="Class Groups" description="Assign teacher-subjects to room schedules and sections" icon={<GraduationCap className="w-5 h-5" />}
-        actions={<Button size="sm" icon={<Plus className="w-3.5 h-3.5" />} onClick={openCreate}>Add Class Group</Button>}
+        actions={
+          <Link href="/class-groups/create">
+            <Button size="sm" icon={<Plus className="w-3.5 h-3.5" />}>Add Class Group</Button>
+          </Link>
+        }
       />
       {error && <div className="mb-4 px-4 py-3 rounded-lg text-sm" style={{ background: '#fce4ec', color: '#c2185b', border: '1px solid #f48fb1' }}>{(error as Error).message}</div>}
       <div className="card p-4">
