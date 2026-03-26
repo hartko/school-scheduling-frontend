@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { teacherSubjectSchema, type TeacherSubject, type TeacherSubjectInput } from '@/lib/schemas';
+import { teacherSubjectSchema, type TeacherSubjectInput } from '@/lib/schemas';
 import { useTeacherSubjects, useCreateTeacherSubject, useDeleteTeacherSubject } from '@/hooks/useTeacherSubjects';
 import { useTeachers } from '@/hooks/useTeachers';
 import { useSubjects } from '@/hooks/useSubjects';
@@ -14,7 +14,6 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { UserCheck, Plus, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 
-// Enriched row type for display
 interface TSRow extends Record<string, unknown> {
   id: number;
   teacher_id: number;
@@ -25,22 +24,16 @@ interface TSRow extends Record<string, unknown> {
   subjectCode: string;
 }
 
-const columns: Column<TSRow>[] = [
-  { key: 'teacherCode', header: 'Teacher Code', width: '130px', render: (v) => <span className="badge-blue font-mono">{String(v)}</span> },
-  { key: 'teacherName', header: 'Teacher', sortable: true },
-  { key: 'subjectCode', header: 'Subject Code', width: '130px', render: (v) => <span className="badge-orange font-mono">{String(v)}</span> },
-  { key: 'subjectName', header: 'Subject', sortable: true },
-];
-
 export default function TeacherSubjectsPage() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<TSRow | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 
-  // Fetch all — TanStack Query deduplicates concurrent requests automatically
   const { data: tsData, isLoading, error } = useTeacherSubjects({ page, limit });
-  const { data: teachersData } = useTeachers({ limit: 999 }); // all for dropdown
+  const { data: teachersData } = useTeachers({ limit: 999 });
   const { data: subjectsData } = useSubjects({ limit: 999 });
 
   const createTS = useCreateTeacherSubject();
@@ -49,7 +42,6 @@ export default function TeacherSubjectsPage() {
   const teachers = teachersData?.data ?? [];
   const subjects = subjectsData?.data ?? [];
 
-  // Enrich rows with human-readable names
   const rows: TSRow[] = (tsData?.data ?? []).map((ts) => {
     const teacher = teachers.find((t) => t.id === ts.teacher_id);
     const subject = subjects.find((s) => s.id === ts.subject_id);
@@ -62,6 +54,29 @@ export default function TeacherSubjectsPage() {
       subjectCode: subject?.code ?? '—',
     };
   });
+
+  const columns: Column<TSRow>[] = [
+    {
+      key: '_sel', header: (
+  <input type="checkbox" className="accent-pink-600 w-3.5 h-3.5"
+    checked={rows.length > 0 && rows.every((r) => selectedIds.has(r.id))}
+    onChange={(e) => setSelectedIds(e.target.checked ? new Set(rows.map((r) => r.id)) : new Set())} />
+), width: '40px',
+      render: (_, row) => (
+        <input type="checkbox" className="accent-pink-600 w-3.5 h-3.5"
+          checked={selectedIds.has(row.id)}
+          onChange={() => setSelectedIds((prev) => {
+            const next = new Set(prev);
+            next.has(row.id) ? next.delete(row.id) : next.add(row.id);
+            return next;
+          })} />
+      ),
+    },
+    { key: 'teacherCode', header: 'Teacher Code', width: '130px', render: (v) => <span className="badge-blue font-mono">{String(v)}</span> },
+    { key: 'teacherName', header: 'Teacher', sortable: true },
+    { key: 'subjectCode', header: 'Subject Code', width: '130px', render: (v) => <span className="badge-orange font-mono">{String(v)}</span> },
+    { key: 'subjectName', header: 'Subject', sortable: true },
+  ];
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<TeacherSubjectInput>({
     resolver: zodResolver(teacherSubjectSchema.omit({ id: true })),
@@ -77,9 +92,16 @@ export default function TeacherSubjectsPage() {
     <>
       <PageHeader title="Teacher Subjects" description="Assign subjects to teachers" icon={<UserCheck className="w-5 h-5" />}
         actions={
-          <Link href="/teacher-subjects/create">
-            <Button size="sm" icon={<Plus className="w-3.5 h-3.5" />}>Assign Subject</Button>
-          </Link>
+          <>
+            {selectedIds.size > 0 && (
+              <Button variant="danger" size="sm" icon={<Trash2 className="w-3.5 h-3.5" />} onClick={() => setBulkDeleteOpen(true)}>
+                Delete ({selectedIds.size})
+              </Button>
+            )}
+            <Link href="/teacher-subjects/create">
+              <Button size="sm" icon={<Plus className="w-3.5 h-3.5" />}>Assign Subject</Button>
+            </Link>
+          </>
         }
       />
       {error && <div className="mb-4 px-4 py-3 rounded-lg text-sm" style={{ background: '#fce4ec', color: '#c2185b', border: '1px solid #f48fb1' }}>{(error as Error).message}</div>}
@@ -87,18 +109,18 @@ export default function TeacherSubjectsPage() {
         {isLoading
           ? <div className="flex items-center justify-center py-16 gap-3 text-ink-400"><img src="/images/domi.png" alt="Loading" className="w-16 h-16 object-contain animate-pulse" />Loading…</div>
           : <DataTable
-            data={rows as unknown as Record<string, unknown>[]}
-            columns={columns as unknown as Column<Record<string, unknown>>[]}
-            searchKeys={['teacherName', 'subjectName', 'teacherCode', 'subjectCode'] as never[]}
-            pagination={tsData?.pagination}
-            onPageChange={setPage}
-            onLimitChange={(l) => { setLimit(l); setPage(1); }}
-            actions={(row) => (
-              <button className="btn-icon" style={{ color: '#ef5350' }} onClick={() => setDeleteTarget(row as unknown as TSRow)}>
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
-            )}
-          />}
+              data={rows as unknown as Record<string, unknown>[]}
+              columns={columns as unknown as Column<Record<string, unknown>>[]}
+              searchKeys={['teacherName', 'subjectName', 'teacherCode', 'subjectCode'] as never[]}
+              pagination={tsData?.pagination}
+              onPageChange={(p) => { setPage(p); setSelectedIds(new Set()); }}
+              onLimitChange={(l) => { setLimit(l); setPage(1); setSelectedIds(new Set()); }}
+              actions={(row) => (
+                <button className="btn-icon" style={{ color: '#ef5350' }} onClick={() => setDeleteTarget(row as unknown as TSRow)}>
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              )}
+            />}
       </div>
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="Assign Subject to Teacher">
@@ -130,6 +152,13 @@ export default function TeacherSubjectsPage() {
         loading={deleteTS.isPending}
         onConfirm={() => { if (deleteTarget?.id) deleteTS.mutate(deleteTarget.id); setDeleteTarget(null); }}
         message={`Remove "${deleteTarget?.teacherName}" from "${deleteTarget?.subjectName}"?`}
+      />
+      <ConfirmDialog
+        open={bulkDeleteOpen}
+        onClose={() => setBulkDeleteOpen(false)}
+        loading={deleteTS.isPending}
+        onConfirm={() => { Array.from(selectedIds).forEach((id) => deleteTS.mutate(id)); setSelectedIds(new Set()); setBulkDeleteOpen(false); }}
+        message={`Remove ${selectedIds.size} selected assignment${selectedIds.size > 1 ? 's' : ''}? This cannot be undone.`}
       />
     </>
   );

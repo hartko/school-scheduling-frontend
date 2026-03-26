@@ -13,11 +13,6 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { Layers, Plus, Pencil, Trash2, Upload, Download } from 'lucide-react';
 import { downloadCSV } from '@/lib/utils';
 
-const columns: Column<Record<string, unknown>>[] = [
-  { key: 'code', header: 'Code', sortable: true, width: '120px', render: (v) => <span className="badge-blue font-mono">{String(v)}</span> },
-  { key: 'name', header: 'Section Name', sortable: true },
-];
-
 export default function SectionsPage() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
@@ -25,6 +20,8 @@ export default function SectionsPage() {
   const [uploadOpen, setUploadOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Section | null>(null);
   const [editing, setEditing] = useState<Section | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 
   const { data, isLoading, error } = useSections({ page, limit });
   const createSection = useCreateSection();
@@ -35,6 +32,30 @@ export default function SectionsPage() {
   const { register, handleSubmit, reset, formState: { errors } } = useForm<SectionInput>({
     resolver: zodResolver(sectionSchema.omit({ id: true })),
   });
+
+  const currentPageData = data?.data ?? [];
+
+  const columns: Column<Record<string, unknown>>[] = [
+    {
+      key: '_sel', header: (
+  <input type="checkbox" className="accent-pink-600 w-3.5 h-3.5"
+    checked={currentPageData.length > 0 && currentPageData.every((r) => selectedIds.has(r.id!))}
+    onChange={(e) => setSelectedIds(e.target.checked ? new Set(currentPageData.map((r) => r.id!)) : new Set())} />
+), width: '40px',
+      render: (_, row) => (
+        <input type="checkbox" className="accent-pink-600 w-3.5 h-3.5"
+          checked={selectedIds.has(Number(row.id))}
+          onChange={() => setSelectedIds((prev) => {
+            const next = new Set(prev);
+            const id = Number(row.id);
+            next.has(id) ? next.delete(id) : next.add(id);
+            return next;
+          })} />
+      ),
+    },
+    { key: 'code', header: 'Code', sortable: true, width: '120px', render: (v) => <span className="badge-blue font-mono">{String(v)}</span> },
+    { key: 'name', header: 'Section Name', sortable: true },
+  ];
 
   const openCreate = () => { setEditing(null); reset({}); setModalOpen(true); };
   const openEdit = (s: Section) => { setEditing(s); reset(s); setModalOpen(true); };
@@ -54,6 +75,11 @@ export default function SectionsPage() {
     <>
       <PageHeader title="Sections" description="Manage class sections" icon={<Layers className="w-5 h-5" />}
         actions={<>
+          {selectedIds.size > 0 && (
+            <Button variant="danger" size="sm" icon={<Trash2 className="w-3.5 h-3.5" />} onClick={() => setBulkDeleteOpen(true)}>
+              Delete ({selectedIds.size})
+            </Button>
+          )}
           <Button variant="secondary" size="sm" icon={<Download className="w-3.5 h-3.5" />} onClick={() => downloadCSV(data?.data ?? [], 'sections.csv')}>Export</Button>
           <Button variant="secondary" size="sm" icon={<Upload className="w-3.5 h-3.5" />} onClick={() => setUploadOpen(true)}>Mass Upload</Button>
           <Button size="sm" icon={<Plus className="w-3.5 h-3.5" />} onClick={openCreate}>Add Section</Button>
@@ -63,10 +89,11 @@ export default function SectionsPage() {
       <div className="card p-4">
         {isLoading
           ? <div className="flex items-center justify-center py-16 gap-3 text-ink-400"><img src="/images/domi.png" alt="Loading" className="w-16 h-16 object-contain animate-pulse" />Loading sections…</div>
-          : <DataTable data={(data?.data ?? []) as unknown as Record<string, unknown>[]} columns={columns}
-            searchKeys={['name', 'code'] as never[]} pagination={data?.pagination}
-            onPageChange={setPage} onLimitChange={(l) => { setLimit(l); setPage(1); }}
-            actions={(row) => (<><button className="btn-icon" onClick={() => openEdit(row as unknown as Section)}><Pencil className="w-3.5 h-3.5" /></button><button className="btn-icon" style={{ color: '#ef5350' }} onClick={() => setDeleteTarget(row as unknown as Section)}><Trash2 className="w-3.5 h-3.5" /></button></>)} />}
+          : <DataTable data={currentPageData as unknown as Record<string, unknown>[]} columns={columns}
+              searchKeys={['name', 'code'] as never[]} pagination={data?.pagination}
+              onPageChange={(p) => { setPage(p); setSelectedIds(new Set()); }}
+              onLimitChange={(l) => { setLimit(l); setPage(1); setSelectedIds(new Set()); }}
+              actions={(row) => (<><button className="btn-icon" onClick={() => openEdit(row as unknown as Section)}><Pencil className="w-3.5 h-3.5" /></button><button className="btn-icon" style={{ color: '#ef5350' }} onClick={() => setDeleteTarget(row as unknown as Section)}><Trash2 className="w-3.5 h-3.5" /></button></>)} />}
       </div>
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Edit Section' : 'Add Section'}>
@@ -83,6 +110,9 @@ export default function SectionsPage() {
       <ConfirmDialog open={!!deleteTarget} onClose={() => setDeleteTarget(null)} loading={deleteSection.isPending}
         onConfirm={() => { if (deleteTarget?.id) deleteSection.mutate(deleteTarget.id); setDeleteTarget(null); }}
         message={`Delete section "${deleteTarget?.name}"?`} />
+      <ConfirmDialog open={bulkDeleteOpen} onClose={() => setBulkDeleteOpen(false)} loading={deleteSection.isPending}
+        onConfirm={() => { Array.from(selectedIds).forEach((id) => deleteSection.mutate(id)); setSelectedIds(new Set()); setBulkDeleteOpen(false); }}
+        message={`Delete ${selectedIds.size} selected section${selectedIds.size > 1 ? 's' : ''}? This cannot be undone.`} />
 
       <MassUpload<SectionInput> open={uploadOpen} onClose={() => setUploadOpen(false)} onUpload={(rows) => bulkCreate.mutate(rows)}
         templateFields={['name', 'code']} entityName="Sections" parseRow={parseRow} />

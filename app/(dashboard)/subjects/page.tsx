@@ -13,11 +13,6 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { BookOpen, Plus, Pencil, Trash2, Upload, Download } from 'lucide-react';
 import { downloadCSV } from '@/lib/utils';
 
-const columns: Column<Record<string, unknown>>[] = [
-  { key: 'code', header: 'Code', sortable: true, width: '130px', render: (v) => <span className="badge-orange font-mono">{String(v)}</span> },
-  { key: 'name', header: 'Subject Name', sortable: true },
-];
-
 export default function SubjectsPage() {
   const [page, setPage]   = useState(1);
   const [limit, setLimit] = useState(10);
@@ -25,6 +20,8 @@ export default function SubjectsPage() {
   const [uploadOpen, setUploadOpen]     = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Subject | null>(null);
   const [editing, setEditing]           = useState<Subject | null>(null);
+  const [selectedIds, setSelectedIds]   = useState<Set<number>>(new Set());
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 
   const { data, isLoading, error } = useSubjects({ page, limit });
   const createSubject = useCreateSubject();
@@ -35,6 +32,30 @@ export default function SubjectsPage() {
   const { register, handleSubmit, reset, formState: { errors } } = useForm<SubjectInput>({
     resolver: zodResolver(subjectSchema.omit({ id: true })),
   });
+
+  const currentPageData = data?.data ?? [];
+
+  const columns: Column<Record<string, unknown>>[] = [
+    {
+      key: '_sel', header: (
+  <input type="checkbox" className="accent-pink-600 w-3.5 h-3.5"
+    checked={currentPageData.length > 0 && currentPageData.every((r) => selectedIds.has(r.id!))}
+    onChange={(e) => setSelectedIds(e.target.checked ? new Set(currentPageData.map((r) => r.id!)) : new Set())} />
+), width: '40px',
+      render: (_, row) => (
+        <input type="checkbox" className="accent-pink-600 w-3.5 h-3.5"
+          checked={selectedIds.has(Number(row.id))}
+          onChange={() => setSelectedIds((prev) => {
+            const next = new Set(prev);
+            const id = Number(row.id);
+            next.has(id) ? next.delete(id) : next.add(id);
+            return next;
+          })} />
+      ),
+    },
+    { key: 'code', header: 'Code', sortable: true, width: '130px', render: (v) => <span className="badge-orange font-mono">{String(v)}</span> },
+    { key: 'name', header: 'Subject Name', sortable: true },
+  ];
 
   const openCreate = () => { setEditing(null); reset({}); setModalOpen(true); };
   const openEdit   = (s: Subject) => { setEditing(s); reset(s); setModalOpen(true); };
@@ -54,6 +75,11 @@ export default function SubjectsPage() {
     <>
       <PageHeader title="Subjects" description="Manage curriculum subjects" icon={<BookOpen className="w-5 h-5" />}
         actions={<>
+          {selectedIds.size > 0 && (
+            <Button variant="danger" size="sm" icon={<Trash2 className="w-3.5 h-3.5" />} onClick={() => setBulkDeleteOpen(true)}>
+              Delete ({selectedIds.size})
+            </Button>
+          )}
           <Button variant="secondary" size="sm" icon={<Download className="w-3.5 h-3.5" />} onClick={() => downloadCSV(data?.data ?? [], 'subjects.csv')}>Export</Button>
           <Button variant="secondary" size="sm" icon={<Upload className="w-3.5 h-3.5" />} onClick={() => setUploadOpen(true)}>Mass Upload</Button>
           <Button size="sm" icon={<Plus className="w-3.5 h-3.5" />} onClick={openCreate}>Add Subject</Button>
@@ -63,9 +89,10 @@ export default function SubjectsPage() {
       <div className="card p-4">
         {isLoading
           ? <div className="flex items-center justify-center py-16 gap-3 text-ink-400"><img src="/images/domi.png" alt="Loading" className="w-16 h-16 object-contain animate-pulse" />Loading subjects…</div>
-          : <DataTable data={(data?.data ?? []) as unknown as Record<string, unknown>[]} columns={columns}
+          : <DataTable data={currentPageData as unknown as Record<string, unknown>[]} columns={columns}
               searchKeys={['name', 'code'] as never[]} pagination={data?.pagination}
-              onPageChange={setPage} onLimitChange={(l) => { setLimit(l); setPage(1); }}
+              onPageChange={(p) => { setPage(p); setSelectedIds(new Set()); }}
+              onLimitChange={(l) => { setLimit(l); setPage(1); setSelectedIds(new Set()); }}
               actions={(row) => (<><button className="btn-icon" onClick={() => openEdit(row as unknown as Subject)}><Pencil className="w-3.5 h-3.5" /></button><button className="btn-icon" style={{ color: '#ef5350' }} onClick={() => setDeleteTarget(row as unknown as Subject)}><Trash2 className="w-3.5 h-3.5" /></button></>)} />}
       </div>
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Edit Subject' : 'Add Subject'}>
@@ -81,6 +108,9 @@ export default function SubjectsPage() {
       <ConfirmDialog open={!!deleteTarget} onClose={() => setDeleteTarget(null)} loading={deleteSubject.isPending}
         onConfirm={() => { if (deleteTarget?.id) deleteSubject.mutate(deleteTarget.id); setDeleteTarget(null); }}
         message={`Delete subject "${deleteTarget?.name}"?`} />
+      <ConfirmDialog open={bulkDeleteOpen} onClose={() => setBulkDeleteOpen(false)} loading={deleteSubject.isPending}
+        onConfirm={() => { Array.from(selectedIds).forEach((id) => deleteSubject.mutate(id)); setSelectedIds(new Set()); setBulkDeleteOpen(false); }}
+        message={`Delete ${selectedIds.size} selected subject${selectedIds.size > 1 ? 's' : ''}? This cannot be undone.`} />
       <MassUpload<SubjectInput> open={uploadOpen} onClose={() => setUploadOpen(false)} onUpload={(rows) => bulkCreate.mutate(rows)}
         templateFields={['name', 'code']} entityName="Subjects" parseRow={parseRow} />
     </>

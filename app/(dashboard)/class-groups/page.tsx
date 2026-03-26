@@ -33,26 +33,17 @@ interface CGRow extends Record<string, unknown> {
   timeSlot: string;
 }
 
-const columns: Column<CGRow>[] = [
-  { key: 'sectionName', header: 'Section', sortable: true, render: (v) => <span className="badge-green">{String(v)}</span> },
-  { key: 'teacherName', header: 'Teacher', sortable: true },
-  { key: 'subjectName', header: 'Subject', sortable: true },
-  { key: 'roomName', header: 'Room', sortable: true },
-  { key: 'day', header: 'Day', render: (v) => <span className="badge-blue">{String(v)}</span> },
-  { key: 'timeSlot', header: 'Time', render: (v) => <span className="font-mono text-xs">{String(v)}</span> },
-];
-
 export default function ClassGroupsPage() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<CGRow | null>(null);
   const [editing, setEditing] = useState<CGRow | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 
-  // Paginated main data
   const { data: cgData, isLoading, error } = useClassGroups({ page, limit });
 
-  // All related data for dropdowns + row enrichment (limit: 999 = fetch all)
   const { data: tsData } = useTeacherSubjects({ limit: 999 });
   const { data: rsData } = useRoomSchedules({ limit: 999 });
   const { data: teachersData } = useTeachers({ limit: 999 });
@@ -73,7 +64,6 @@ export default function ClassGroupsPage() {
   const schedules = schedulesData?.data ?? [];
   const sections = sectionsData?.data ?? [];
 
-  // Enrich rows with human-readable labels
   const rows: CGRow[] = (cgData?.data ?? []).map((cg) => {
     const ts = teacherSubjects.find((x) => x.id === cg.teacher_subject_id);
     const rs = roomSchedules.find((x) => x.id === cg.room_schedule_id);
@@ -94,7 +84,31 @@ export default function ClassGroupsPage() {
     };
   });
 
-  // Dropdown options
+  const columns: Column<CGRow>[] = [
+    {
+      key: '_sel', header: (
+  <input type="checkbox" className="accent-pink-600 w-3.5 h-3.5"
+    checked={rows.length > 0 && rows.every((r) => selectedIds.has(r.id))}
+    onChange={(e) => setSelectedIds(e.target.checked ? new Set(rows.map((r) => r.id)) : new Set())} />
+), width: '40px',
+      render: (_, row) => (
+        <input type="checkbox" className="accent-pink-600 w-3.5 h-3.5"
+          checked={selectedIds.has(row.id)}
+          onChange={() => setSelectedIds((prev) => {
+            const next = new Set(prev);
+            next.has(row.id) ? next.delete(row.id) : next.add(row.id);
+            return next;
+          })} />
+      ),
+    },
+    { key: 'sectionName', header: 'Section', sortable: true, render: (v) => <span className="badge-green">{String(v)}</span> },
+    { key: 'teacherName', header: 'Teacher', sortable: true },
+    { key: 'subjectName', header: 'Subject', sortable: true },
+    { key: 'roomName', header: 'Room', sortable: true },
+    { key: 'day', header: 'Day', render: (v) => <span className="badge-blue">{String(v)}</span> },
+    { key: 'timeSlot', header: 'Time', render: (v) => <span className="font-mono text-xs">{String(v)}</span> },
+  ];
+
   const tsOptions = teacherSubjects.map((ts) => {
     const teacher = teachers.find((t) => t.id === ts.teacher_id);
     const subject = subjects.find((s) => s.id === ts.subject_id);
@@ -131,9 +145,16 @@ export default function ClassGroupsPage() {
     <>
       <PageHeader title="Class Groups" description="Assign teacher-subjects to room schedules and sections" icon={<GraduationCap className="w-5 h-5" />}
         actions={
-          <Link href="/class-groups/create">
-            <Button size="sm" icon={<Plus className="w-3.5 h-3.5" />}>Add Class Group</Button>
-          </Link>
+          <>
+            {selectedIds.size > 0 && (
+              <Button variant="danger" size="sm" icon={<Trash2 className="w-3.5 h-3.5" />} onClick={() => setBulkDeleteOpen(true)}>
+                Delete ({selectedIds.size})
+              </Button>
+            )}
+            <Link href="/class-groups/create">
+              <Button size="sm" icon={<Plus className="w-3.5 h-3.5" />}>Add Class Group</Button>
+            </Link>
+          </>
         }
       />
       {error && <div className="mb-4 px-4 py-3 rounded-lg text-sm" style={{ background: '#fce4ec', color: '#c2185b', border: '1px solid #f48fb1' }}>{(error as Error).message}</div>}
@@ -141,19 +162,19 @@ export default function ClassGroupsPage() {
         {isLoading
           ? <div className="flex items-center justify-center py-16 gap-3 text-ink-400"><img src="/images/domi.png" alt="Loading" className="w-16 h-16 object-contain animate-pulse" />Loading class groups…</div>
           : <DataTable
-            data={rows as unknown as Record<string, unknown>[]}
-            columns={columns as unknown as Column<Record<string, unknown>>[]}
-            searchKeys={['sectionName', 'teacherName', 'subjectName', 'roomName'] as never[]}
-            pagination={cgData?.pagination}
-            onPageChange={setPage}
-            onLimitChange={(l) => { setLimit(l); setPage(1); }}
-            actions={(row) => (
-              <>
-                <button className="btn-icon" onClick={() => openEdit(row as unknown as CGRow)}><Pencil className="w-3.5 h-3.5" /></button>
-                <button className="btn-icon" style={{ color: '#ef5350' }} onClick={() => setDeleteTarget(row as unknown as CGRow)}><Trash2 className="w-3.5 h-3.5" /></button>
-              </>
-            )}
-          />}
+              data={rows as unknown as Record<string, unknown>[]}
+              columns={columns as unknown as Column<Record<string, unknown>>[]}
+              searchKeys={['sectionName', 'teacherName', 'subjectName', 'roomName'] as never[]}
+              pagination={cgData?.pagination}
+              onPageChange={(p) => { setPage(p); setSelectedIds(new Set()); }}
+              onLimitChange={(l) => { setLimit(l); setPage(1); setSelectedIds(new Set()); }}
+              actions={(row) => (
+                <>
+                  <button className="btn-icon" onClick={() => openEdit(row as unknown as CGRow)}><Pencil className="w-3.5 h-3.5" /></button>
+                  <button className="btn-icon" style={{ color: '#ef5350' }} onClick={() => setDeleteTarget(row as unknown as CGRow)}><Trash2 className="w-3.5 h-3.5" /></button>
+                </>
+              )}
+            />}
       </div>
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Edit Class Group' : 'Add Class Group'} size="lg">
@@ -174,6 +195,13 @@ export default function ClassGroupsPage() {
         loading={deleteCG.isPending}
         onConfirm={() => { if (deleteTarget?.id) deleteCG.mutate(deleteTarget.id); setDeleteTarget(null); }}
         message={`Delete class group for section "${deleteTarget?.sectionName}"?`}
+      />
+      <ConfirmDialog
+        open={bulkDeleteOpen}
+        onClose={() => setBulkDeleteOpen(false)}
+        loading={deleteCG.isPending}
+        onConfirm={() => { Array.from(selectedIds).forEach((id) => deleteCG.mutate(id)); setSelectedIds(new Set()); setBulkDeleteOpen(false); }}
+        message={`Delete ${selectedIds.size} selected class group${selectedIds.size > 1 ? 's' : ''}? This cannot be undone.`}
       />
     </>
   );

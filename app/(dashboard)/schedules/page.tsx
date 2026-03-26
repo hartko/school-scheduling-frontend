@@ -13,22 +13,43 @@ import { downloadCSV } from '@/lib/utils';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-const columns: Column<Record<string, unknown>>[] = [
-  { key: 'name', header: 'Name', sortable: true, render: (v) => <span className="font-medium">{String(v)}</span> },
-  { key: 'schedule_code', header: 'Code', sortable: true, render: (v) => <span className="font-mono text-xs px-2 py-0.5 rounded" style={{ background: '#f3e5f5', color: '#8e24aa' }}>{String(v || '—')}</span> },
-  { key: 'description', header: 'Description', sortable: false, render: (v) => <span className="text-sm" style={{ color: '#757575' }}>{String(v || '—')}</span> },
-];
-
 export default function SchedulesPage() {
   const router = useRouter();
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Schedule | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 
   const { data, isLoading, error } = useSchedules({ page, limit });
   const deleteSchedule = useDeleteSchedule();
   const bulkCreate = useBulkCreateSchedules();
+
+  const currentPageData = data?.data ?? [];
+
+  const columns: Column<Record<string, unknown>>[] = [
+    {
+      key: '_sel', header: (
+  <input type="checkbox" className="accent-pink-600 w-3.5 h-3.5"
+    checked={currentPageData.length > 0 && currentPageData.every((r) => selectedIds.has(r.id!))}
+    onChange={(e) => setSelectedIds(e.target.checked ? new Set(currentPageData.map((r) => r.id!)) : new Set())} />
+), width: '40px',
+      render: (_, row) => (
+        <input type="checkbox" className="accent-pink-600 w-3.5 h-3.5"
+          checked={selectedIds.has(Number(row.id))}
+          onChange={() => setSelectedIds((prev) => {
+            const next = new Set(prev);
+            const id = Number(row.id);
+            next.has(id) ? next.delete(id) : next.add(id);
+            return next;
+          })} />
+      ),
+    },
+    { key: 'name', header: 'Name', sortable: true, render: (v) => <span className="font-medium">{String(v)}</span> },
+    { key: 'schedule_code', header: 'Code', sortable: true, render: (v) => <span className="font-mono text-xs px-2 py-0.5 rounded" style={{ background: '#f3e5f5', color: '#8e24aa' }}>{String(v || '—')}</span> },
+    { key: 'description', header: 'Description', sortable: false, render: (v) => <span className="text-sm" style={{ color: '#757575' }}>{String(v || '—')}</span> },
+  ];
 
   const parseRow = (row: Record<string, string>): ScheduleInput | null => {
     const r = scheduleSchema.safeParse({
@@ -50,6 +71,11 @@ export default function SchedulesPage() {
         icon={<Clock className="w-5 h-5" />}
         actions={
           <>
+            {selectedIds.size > 0 && (
+              <Button variant="danger" size="sm" icon={<Trash2 className="w-3.5 h-3.5" />} onClick={() => setBulkDeleteOpen(true)}>
+                Delete ({selectedIds.size})
+              </Button>
+            )}
             <Button variant="secondary" size="sm" icon={<Download className="w-3.5 h-3.5" />} onClick={() => downloadCSV(data?.data ?? [], 'schedules.csv')}>Export</Button>
             <Button variant="secondary" size="sm" icon={<Upload className="w-3.5 h-3.5" />} onClick={() => setUploadOpen(true)}>Mass Upload</Button>
             <Link href="/schedules/create">
@@ -69,12 +95,12 @@ export default function SchedulesPage() {
         {isLoading
           ? <div className="flex items-center justify-center py-16 gap-3 text-ink-400"><img src="/images/domi.png" alt="Loading" className="w-16 h-16 object-contain animate-pulse" />Loading schedules…</div>
           : <DataTable
-              data={(data?.data ?? []) as unknown as Record<string, unknown>[]}
+              data={currentPageData as unknown as Record<string, unknown>[]}
               columns={columns}
               searchKeys={['name', 'schedule_code'] as never[]}
               pagination={data?.pagination}
-              onPageChange={setPage}
-              onLimitChange={(l) => { setLimit(l); setPage(1); }}
+              onPageChange={(p) => { setPage(p); setSelectedIds(new Set()); }}
+              onLimitChange={(l) => { setLimit(l); setPage(1); setSelectedIds(new Set()); }}
               actions={(row) => {
                 const s = row as unknown as Schedule;
                 return (
@@ -101,6 +127,13 @@ export default function SchedulesPage() {
         loading={deleteSchedule.isPending}
         onConfirm={() => { if (deleteTarget?.id) deleteSchedule.mutate(deleteTarget.id); setDeleteTarget(null); }}
         message={`Delete "${deleteTarget?.name}"? This cannot be undone.`}
+      />
+      <ConfirmDialog
+        open={bulkDeleteOpen}
+        onClose={() => setBulkDeleteOpen(false)}
+        loading={deleteSchedule.isPending}
+        onConfirm={() => { Array.from(selectedIds).forEach((id) => deleteSchedule.mutate(id)); setSelectedIds(new Set()); setBulkDeleteOpen(false); }}
+        message={`Delete ${selectedIds.size} selected schedule${selectedIds.size > 1 ? 's' : ''}? This cannot be undone.`}
       />
 
       <MassUpload<ScheduleInput>

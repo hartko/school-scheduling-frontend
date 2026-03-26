@@ -6,7 +6,7 @@ import type { PaginationMeta } from '@/lib/schemas';
 
 export interface Column<T> {
   key: string;
-  header: string;
+  header: React.ReactNode;
   render?: (value: unknown, row: T) => React.ReactNode;
   sortable?: boolean;
   width?: string;

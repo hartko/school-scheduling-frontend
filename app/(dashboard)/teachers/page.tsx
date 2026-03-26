@@ -16,14 +16,6 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { Users, Plus, Pencil, Trash2, Upload, Download } from 'lucide-react';
 import { downloadCSV } from '@/lib/utils';
 
-const columns: Column<Record<string, unknown>>[] = [
-  { key: 'teacher_code', header: 'Code', sortable: true, width: '110px', render: (v) => <span className="badge-blue font-mono">{String(v)}</span> },
-  { key: 'first_name', header: 'First Name', sortable: true },
-  { key: 'middle_name', header: 'Middle Name', render: (v) => String(v || '—') },
-  { key: 'last_name', header: 'Last Name', sortable: true },
-  { key: 'email', header: 'Email', render: (v) => <span className="font-mono text-xs text-ink-500">{String(v)}</span> },
-];
-
 export default function TeachersPage() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
@@ -31,6 +23,8 @@ export default function TeachersPage() {
   const [uploadOpen, setUploadOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Teacher | null>(null);
   const [editing, setEditing] = useState<Teacher | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 
   const { data, isLoading, error } = useTeachers({ page, limit });
   const createTeacher = useCreateTeacher();
@@ -41,6 +35,33 @@ export default function TeachersPage() {
   const { register, handleSubmit, reset, formState: { errors } } = useForm<TeacherInput>({
     resolver: zodResolver(teacherSchema.omit({ id: true })),
   });
+
+  const currentPageData = data?.data ?? [];
+
+  const columns: Column<Record<string, unknown>>[] = [
+    {
+      key: '_sel', header: (
+  <input type="checkbox" className="accent-pink-600 w-3.5 h-3.5"
+    checked={currentPageData.length > 0 && currentPageData.every((r) => selectedIds.has(r.id!))}
+    onChange={(e) => setSelectedIds(e.target.checked ? new Set(currentPageData.map((r) => r.id!)) : new Set())} />
+), width: '40px',
+      render: (_, row) => (
+        <input type="checkbox" className="accent-pink-600 w-3.5 h-3.5"
+          checked={selectedIds.has(Number(row.id))}
+          onChange={() => setSelectedIds((prev) => {
+            const next = new Set(prev);
+            const id = Number(row.id);
+            next.has(id) ? next.delete(id) : next.add(id);
+            return next;
+          })} />
+      ),
+    },
+    { key: 'teacher_code', header: 'Code', sortable: true, width: '110px', render: (v) => <span className="badge-blue font-mono">{String(v)}</span> },
+    { key: 'first_name', header: 'First Name', sortable: true },
+    { key: 'middle_name', header: 'Middle Name', render: (v) => String(v || '—') },
+    { key: 'last_name', header: 'Last Name', sortable: true },
+    { key: 'email', header: 'Email', render: (v) => <span className="font-mono text-xs text-ink-500">{String(v)}</span> },
+  ];
 
   const openCreate = () => { setEditing(null); reset({}); setModalOpen(true); };
   const openEdit = (t: Teacher) => { setEditing(t); reset(t); setModalOpen(true); };
@@ -71,6 +92,11 @@ export default function TeachersPage() {
         icon={<Users className="w-5 h-5" />}
         actions={
           <>
+            {selectedIds.size > 0 && (
+              <Button variant="danger" size="sm" icon={<Trash2 className="w-3.5 h-3.5" />} onClick={() => setBulkDeleteOpen(true)}>
+                Delete ({selectedIds.size})
+              </Button>
+            )}
             <Button variant="secondary" size="sm" icon={<Download className="w-3.5 h-3.5" />}
               onClick={() => downloadCSV(data?.data ?? [], 'teachers.csv')}>Export</Button>
             <Button variant="secondary" size="sm" icon={<Upload className="w-3.5 h-3.5" />}
@@ -94,12 +120,12 @@ export default function TeachersPage() {
           </div>
         ) : (
           <DataTable
-            data={(data?.data ?? []) as unknown as Record<string, unknown>[]}
+            data={currentPageData as unknown as Record<string, unknown>[]}
             columns={columns}
             searchKeys={['first_name', 'last_name', 'email', 'teacher_code'] as never[]}
             pagination={data?.pagination}
-            onPageChange={setPage}
-            onLimitChange={(l) => { setLimit(l); setPage(1); }}
+            onPageChange={(p) => { setPage(p); setSelectedIds(new Set()); }}
+            onLimitChange={(l) => { setLimit(l); setPage(1); setSelectedIds(new Set()); }}
             actions={(row) => (
               <>
                 <button className="btn-icon" onClick={() => openEdit(row as unknown as Teacher)}><Pencil className="w-3.5 h-3.5" /></button>
@@ -134,6 +160,14 @@ export default function TeachersPage() {
         onConfirm={() => { if (deleteTarget?.id) deleteTeacher.mutate(deleteTarget.id); setDeleteTarget(null); }}
         loading={deleteTeacher.isPending}
         message={`Delete teacher "${deleteTarget?.first_name} ${deleteTarget?.last_name}"?`}
+      />
+
+      <ConfirmDialog
+        open={bulkDeleteOpen}
+        onClose={() => setBulkDeleteOpen(false)}
+        onConfirm={() => { Array.from(selectedIds).forEach((id) => deleteTeacher.mutate(id)); setSelectedIds(new Set()); setBulkDeleteOpen(false); }}
+        loading={deleteTeacher.isPending}
+        message={`Delete ${selectedIds.size} selected teacher${selectedIds.size > 1 ? 's' : ''}? This cannot be undone.`}
       />
 
       <MassUpload<TeacherInput>
