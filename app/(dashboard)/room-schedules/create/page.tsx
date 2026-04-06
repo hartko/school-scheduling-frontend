@@ -134,7 +134,8 @@ export default function RoomScheduleCreatePage() {
     setSubmitting(true);
     setSubmitError(null);
     try {
-      await Promise.all(pending.map((r) => createRS.mutateAsync({ room_id: r.room_id, schedule_id: r.schedule_id })));
+      console.log('Submitting pending room schedules:', pending);
+      // await Promise.all(pending.map((r) => createRS.mutateAsync({ room_id: r.room_id, schedule_id: r.schedule_id })));
       router.push('/room-schedules');
     } catch (e) {
       setSubmitError((e as Error).message);

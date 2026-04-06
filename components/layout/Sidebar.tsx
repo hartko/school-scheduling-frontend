@@ -3,12 +3,18 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   Users, Building2, BookOpen, Clock, Layers,
-  UserCheck, CalendarDays, GraduationCap, LogOut, X
+  UserCheck, CalendarDays, GraduationCap, LogOut, X, LayoutDashboard
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 
 const navGroups = [
+  {
+    label: 'Overview',
+    items: [
+      { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    ],
+  },
   {
     label: 'Resources',
     items: [

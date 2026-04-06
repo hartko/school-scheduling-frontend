@@ -21,9 +21,7 @@ interface RSRow extends Record<string, unknown> {
   room_id: number;
   schedule_id: number;
   roomName: string;
-  day: number;
-  timeSlot: string;
-  isBreak: boolean;
+  scheduleName: string;
 }
 
 export default function RoomSchedulesPage() {
@@ -52,8 +50,7 @@ export default function RoomSchedulesPage() {
       id: rs.id!,
       roomName: room?.name ?? '—',
       day: Number(sched?.day) ?? '—',
-      timeSlot: sched ? `${formatTime(sched.start_time)} – ${formatTime(sched.end_time)}` : '—',
-      isBreak: sched?.is_break ?? false,
+      scheduleName: sched?.name ?? '—',
     };
   });
 
@@ -75,9 +72,7 @@ export default function RoomSchedulesPage() {
       ),
     },
     { key: 'roomName', header: 'Room', sortable: true },
-    { key: 'day', header: 'Day', sortable: true, render: (v) => <span className="badge-red">{String(v)}</span> },
-    { key: 'timeSlot', header: 'Time Slot', render: (v) => <span className="font-mono text-sm">{String(v)}</span> },
-    { key: 'isBreak', header: 'Type', render: (v) => v ? <span className="badge-orange">Break</span> : <span className="badge-green">Class</span> },
+    { key: 'scheduleName', header: 'Schedule', sortable: true },
   ];
 
   const { handleSubmit, reset, control, formState: { errors } } = useForm<RoomScheduleInput>({
