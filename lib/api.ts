@@ -125,7 +125,7 @@ export const roomSchedulesApi = {
 export const sectionSubjectsApi = {
   getAll: () => get<SectionSubject[]>(ENDPOINTS.sectionSubjects),
   getBySectionId: (sectionId: number) => get<SectionSubject[]>(`${ENDPOINTS.sectionSubjects}?section_id=${sectionId}`),
-  create: (data: { section_id: number; subject_id: number }) => post<SectionSubject>(ENDPOINTS.sectionSubjects, data),
+  create: (data: { section_id: number; subject_id: number; units?: number }) => post<SectionSubject>(ENDPOINTS.sectionSubjects, data),
   bulkAssign: (sectionId: number, assignments: { subject_id: number; units?: number }[]) =>
     request<SectionSubject[]>(`${ENDPOINTS.sectionSubjects}/${sectionId}`, {
       method: 'PUT',
