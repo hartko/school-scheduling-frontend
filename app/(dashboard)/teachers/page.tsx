@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { teacherSchema, type Teacher, type TeacherInput } from '@/lib/schemas';
@@ -7,14 +7,17 @@ import {
   useTeachers, useCreateTeacher, useUpdateTeacher,
   useDeleteTeacher, useBulkCreateTeachers,
 } from '@/hooks/useTeachers';
+import { useSubjects } from '@/hooks/useSubjects';
+import { useTeacherSubjects, useCreateTeacherSubject, useDeleteTeacherSubject } from '@/hooks/useTeacherSubjects';
 import { DataTable, type Column } from '@/components/tables/DataTable';
 import { MassUpload } from '@/components/tables/MassUpload';
 import { Modal, ConfirmDialog } from '@/components/ui/Modal';
 import { TextField } from '@/components/ui/TextField';
 import { Button } from '@/components/ui/Button';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { Users, Plus, Pencil, Trash2, Upload, Download } from 'lucide-react';
+import { Users, Plus, Pencil, Trash2, Upload, Download, BookOpen } from 'lucide-react';
 import { downloadCSV } from '@/lib/utils';
+import Link from 'next/link';
 
 export default function TeachersPage() {
   const [page, setPage] = useState(1);
@@ -25,12 +28,22 @@ export default function TeachersPage() {
   const [editing, setEditing] = useState<Teacher | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [assignTarget, setAssignTarget] = useState<Teacher | null>(null);
+  const [pendingSubjectIds, setPendingSubjectIds] = useState<Set<number>>(new Set());
+  const [assignSaving, setAssignSaving] = useState(false);
+  const [viewTarget, setViewTarget] = useState<Teacher | null>(null);
 
   const { data, isLoading, error } = useTeachers({ page, limit });
   const createTeacher = useCreateTeacher();
   const updateTeacher = useUpdateTeacher();
   const deleteTeacher = useDeleteTeacher();
   const bulkCreate = useBulkCreateTeachers();
+  const { data: subjectsData } = useSubjects({ limit: 999 });
+  const { data: allTS } = useTeacherSubjects({ limit: 999 });
+  const createTS = useCreateTeacherSubject();
+  const deleteTS = useDeleteTeacherSubject();
+  const subjects = subjectsData?.data ?? [];
+  const allTeacherSubjects = allTS?.data ?? [];
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<TeacherInput>({
     resolver: zodResolver(teacherSchema.omit({ id: true })),
@@ -58,13 +71,58 @@ export default function TeachersPage() {
     },
     { key: 'teacher_code', header: 'Code', sortable: true, width: '110px', render: (v) => <span className="badge-blue font-mono">{String(v)}</span> },
     { key: 'first_name', header: 'First Name', sortable: true },
-    { key: 'middle_name', header: 'Middle Name', render: (v) => String(v || '—') },
     { key: 'last_name', header: 'Last Name', sortable: true },
     { key: 'email', header: 'Email', render: (v) => <span className="font-mono text-xs text-ink-500">{String(v)}</span> },
+    {
+      key: '_subjects', header: 'Subjects',
+      render: (_, row) => {
+        const assigned = allTeacherSubjects.filter((ts) => ts.teacher_id === Number(row.id));
+        if (assigned.length === 0) return <span style={{ color: '#bdbdbd' }} className="text-xs">—</span>;
+        return (
+          <div className="flex flex-col gap-1">
+            <div className="flex flex-wrap gap-1">
+              {assigned.slice(0, 4).map((ts) => {
+                const s = subjects.find((s) => s.id === ts.subject_id);
+                return <span key={ts.id} className="badge-orange font-mono text-xs">{s?.code ?? ts.subject_id}</span>;
+              })}
+              {assigned.length > 4 && <span className="text-xs" style={{ color: '#9e9e9e' }}>+{assigned.length - 4} more</span>}
+            </div>
+            <button className="text-xs text-left" style={{ color: '#e91e8c' }}
+              onClick={() => setViewTarget(row as unknown as Teacher)}>
+              Show all ({assigned.length})
+            </button>
+          </div>
+        );
+      },
+    },
   ];
 
   const openCreate = () => { setEditing(null); reset({}); setModalOpen(true); };
   const openEdit = (t: Teacher) => { setEditing(t); reset(t); setModalOpen(true); };
+
+  const openAssign = (t: Teacher) => { setAssignTarget(t); setPendingSubjectIds(new Set()); };
+
+  useEffect(() => {
+    if (!assignTarget) return;
+    const current = allTeacherSubjects.filter((ts) => ts.teacher_id === assignTarget.id).map((ts) => ts.subject_id);
+    setPendingSubjectIds(new Set(current));
+  }, [assignTarget, allTeacherSubjects]);
+
+  const onSaveAssign = async () => {
+    if (!assignTarget?.id) return;
+    setAssignSaving(true);
+    try {
+      const current = allTeacherSubjects.filter((ts) => ts.teacher_id === assignTarget.id);
+      const currentIds = new Set(current.map((ts) => ts.subject_id));
+      const toDelete = current.filter((ts) => !pendingSubjectIds.has(ts.subject_id));
+      const toCreate = Array.from(pendingSubjectIds).filter((id) => !currentIds.has(id));
+      await Promise.all(toDelete.map((ts) => deleteTS.mutateAsync(ts.id!)));
+      await Promise.all(toCreate.map((subject_id) => createTS.mutateAsync({ teacher_id: assignTarget.id!, subject_id })));
+      setAssignTarget(null);
+    } finally {
+      setAssignSaving(false);
+    }
+  };
 
   const onSubmit = async (values: TeacherInput) => {
     if (editing?.id) await updateTeacher.mutateAsync({ id: editing.id, data: values });
@@ -101,6 +159,9 @@ export default function TeachersPage() {
               onClick={() => downloadCSV(data?.data ?? [], 'teachers.csv')}>Export</Button>
             <Button variant="secondary" size="sm" icon={<Upload className="w-3.5 h-3.5" />}
               onClick={() => setUploadOpen(true)}>Mass Upload</Button>
+            <Link href="/teacher-subjects/create">
+              <Button variant="secondary" size="sm" icon={<BookOpen className="w-3.5 h-3.5" />}>Assign Subjects</Button>
+            </Link>
             <Button size="sm" icon={<Plus className="w-3.5 h-3.5" />} onClick={openCreate}>Add Teacher</Button>
           </>
         }
@@ -128,6 +189,7 @@ export default function TeachersPage() {
             onLimitChange={(l) => { setLimit(l); setPage(1); setSelectedIds(new Set()); }}
             actions={(row) => (
               <>
+                <button className="btn-icon" title="Assign Subjects" onClick={() => openAssign(row as unknown as Teacher)}><BookOpen className="w-3.5 h-3.5" /></button>
                 <button className="btn-icon" onClick={() => openEdit(row as unknown as Teacher)}><Pencil className="w-3.5 h-3.5" /></button>
                 <button className="btn-icon" style={{ color: '#ef5350' }} onClick={() => setDeleteTarget(row as unknown as Teacher)}><Trash2 className="w-3.5 h-3.5" /></button>
               </>
@@ -178,6 +240,63 @@ export default function TeachersPage() {
         entityName="Teachers"
         parseRow={parseRow}
       />
+
+      <Modal open={!!viewTarget} onClose={() => setViewTarget(null)} title={`Subjects — ${viewTarget?.first_name ?? ''} ${viewTarget?.last_name ?? ''}`} size="md">
+        {(() => {
+          const assigned = allTeacherSubjects.filter((ts) => ts.teacher_id === viewTarget?.id);
+          return (
+            <div className="space-y-3">
+              {assigned.length === 0 ? (
+                <p className="text-center py-6 text-xs" style={{ color: '#9e9e9e' }}>No subjects assigned.</p>
+              ) : (
+                <div className="rounded-lg overflow-hidden" style={{ border: '1.5px solid #e0e0e0' }}>
+                  {assigned.map((ts, i) => {
+                    const s = subjects.find((s) => s.id === ts.subject_id);
+                    return (
+                      <div key={ts.id} className="flex items-center gap-3 px-4 py-2.5 text-sm"
+                        style={{ borderBottom: i < assigned.length - 1 ? '1px solid #f5f5f5' : 'none', background: '#fff' }}>
+                        <span className="flex-1">{s?.name ?? ts.subject_id}</span>
+                        <span className="badge-blue font-mono text-xs">{s?.code ?? '—'}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              <div className="flex justify-between items-center pt-1">
+                <span className="text-xs" style={{ color: '#9e9e9e' }}>{assigned.length} subject{assigned.length !== 1 ? 's' : ''}</span>
+                <Button variant="secondary" type="button" onClick={() => setViewTarget(null)}>Close</Button>
+              </div>
+            </div>
+          );
+        })()}
+      </Modal>
+
+      <Modal open={!!assignTarget} onClose={() => setAssignTarget(null)} title={`Assign Subjects — ${assignTarget?.first_name ?? ''} ${assignTarget?.last_name ?? ''}`} size="md">
+        <div className="space-y-3">
+          <p className="text-xs" style={{ color: '#9e9e9e' }}>Select subjects this teacher can handle.</p>
+          <div className="rounded-lg overflow-hidden max-h-72 overflow-y-auto" style={{ border: '1.5px solid #e0e0e0' }}>
+            {subjects.length === 0 ? (
+              <p className="text-center py-6 text-xs" style={{ color: '#9e9e9e' }}>No subjects found.</p>
+            ) : subjects.map((s) => (
+              <label key={s.id} className="flex items-center gap-3 px-4 py-2.5 cursor-pointer text-sm transition-colors"
+                style={{ borderBottom: '1px solid #f5f5f5', background: pendingSubjectIds.has(s.id!) ? '#fdf2f8' : '#fff' }}>
+                <input type="checkbox" className="accent-pink-600 w-3.5 h-3.5 shrink-0"
+                  checked={pendingSubjectIds.has(s.id!)}
+                  onChange={() => setPendingSubjectIds((prev) => { const n = new Set(prev); n.has(s.id!) ? n.delete(s.id!) : n.add(s.id!); return n; })} />
+                <span className="flex-1">{s.name}</span>
+                <span className="font-mono text-xs" style={{ color: '#9e9e9e' }}>{s.code}</span>
+              </label>
+            ))}
+          </div>
+          <div className="flex justify-between items-center pt-1">
+            <span className="text-xs" style={{ color: '#9e9e9e' }}>{pendingSubjectIds.size} selected</span>
+            <div className="flex gap-2">
+              <Button variant="secondary" type="button" onClick={() => setAssignTarget(null)}>Cancel</Button>
+              <Button onClick={onSaveAssign} loading={assignSaving}>Save</Button>
+            </div>
+          </div>
+        </div>
+      </Modal>
     </>
   );
 }

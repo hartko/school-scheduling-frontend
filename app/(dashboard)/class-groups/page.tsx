@@ -11,14 +11,17 @@ import { useSubjects } from '@/hooks/useSubjects';
 import { useRooms } from '@/hooks/useRooms';
 import { useSchedules } from '@/hooks/useSchedules';
 import { useSections } from '@/hooks/useSections';
+import { useAllSectionSubjects } from '@/hooks/useSectionSubjects';
+import { useScheduler } from '@/hooks/useScheduler';
 import { DataTable, type Column } from '@/components/tables/DataTable';
 import { Modal, ConfirmDialog } from '@/components/ui/Modal';
 import { SelectField } from '@/components/ui/SelectField';
 import { Button } from '@/components/ui/Button';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { GraduationCap, Plus, Pencil, Trash2 } from 'lucide-react';
+import { GraduationCap, Plus, Pencil, Trash2, Wand2, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { formatTime } from '@/lib/utils';
+import type { SectionSubject, RoomScheduleDetail } from '@/lib/schemas';
 
 interface CGRow extends Record<string, unknown> {
   id: number;
@@ -41,6 +44,7 @@ export default function ClassGroupsPage() {
   const [editing, setEditing] = useState<CGRow | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [generateOpen, setGenerateOpen] = useState(false);
 
   const { data: cgData, isLoading, error } = useClassGroups({ page, limit });
 
@@ -51,26 +55,59 @@ export default function ClassGroupsPage() {
   const { data: roomsData } = useRooms({ limit: 999 });
   const { data: schedulesData } = useSchedules({ limit: 999 });
   const { data: sectionsData } = useSections({ limit: 999 });
+  const { data: allSectionSubjects } = useAllSectionSubjects();
 
   const createCG = useCreateClassGroup();
   const updateCG = useUpdateClassGroup();
   const deleteCG = useDeleteClassGroup();
+  const scheduler = useScheduler();
 
   const teacherSubjects = tsData?.data ?? [];
-  const roomSchedules = rsData?.data ?? [];
+  const roomSchedules = (rsData?.data ?? []) as unknown as RoomScheduleDetail[];
   const teachers = teachersData?.data ?? [];
   const subjects = subjectsData?.data ?? [];
   const rooms = roomsData?.data ?? [];
   const schedules = schedulesData?.data ?? [];
   const sections = sectionsData?.data ?? [];
+  const sectionSubjects: SectionSubject[] = allSectionSubjects ?? [];
 
+  // ── Generate modal: which sections are selected ───────────────────────────
+  const [selectedSections, setSelectedSections] = useState<Set<number>>(new Set());
+
+  const sectionsWithSubjects = sections.filter((s) =>
+    sectionSubjects.some((ss) => ss.section_id === s.id)
+  );
+
+  const openGenerate = () => {
+    scheduler.reset();
+    setSelectedSections(new Set(sectionsWithSubjects.map((s) => s.id!)));
+    setGenerateOpen(true);
+  };
+
+  const closeGenerate = () => {
+    scheduler.reset();
+    setGenerateOpen(false);
+  };
+
+  const onGenerate = () => {
+    const assignments = Array.from(selectedSections).map((sectionId) => {
+      const subjs = sectionSubjects
+        .filter((ss) => ss.section_id === sectionId)
+        .map((ss) => ({ subject_id: ss.subject_id, units: ss.units ?? 1 }));
+      return { section_id: sectionId, subjects: subjs };
+    }).filter((a) => a.subjects.length > 0);
+
+    scheduler.generate({ assignments });
+  };
+
+  // ── Table rows ────────────────────────────────────────────────────────────
   const rows: CGRow[] = (cgData?.data ?? []).map((cg) => {
     const ts = teacherSubjects.find((x) => x.id === cg.teacher_subject_id);
     const rs = roomSchedules.find((x) => x.id === cg.room_schedule_id);
     const section = sections.find((x) => x.id === cg.section_id);
     const teacher = teachers.find((x) => x.id === ts?.teacher_id);
     const subject = subjects.find((x) => x.id === ts?.subject_id);
-    const room = rooms.find((x) => x.id === rs?.room_id);
+    const room = rooms.find((x) => x.id === rs?.room?.id);
     const sched = schedules.find((x) => x.id === rs?.schedule_id);
     return {
       ...cg,
@@ -78,8 +115,8 @@ export default function ClassGroupsPage() {
       sectionName: section?.name ?? '—',
       teacherName: teacher ? `${teacher.first_name} ${teacher.last_name}` : '—',
       subjectName: subject?.name ?? '—',
-      roomName: room?.name ?? '—',
-      day: Number(sched?.day) ?? '—',
+      roomName: rs?.room?.name ?? room?.name ?? '—',
+      day: Number(sched?.day) ?? 0,
       timeSlot: sched ? `${formatTime(sched.start_time)} – ${formatTime(sched.end_time)}` : '—',
     };
   });
@@ -87,10 +124,10 @@ export default function ClassGroupsPage() {
   const columns: Column<CGRow>[] = [
     {
       key: '_sel', header: (
-  <input type="checkbox" className="accent-pink-600 w-3.5 h-3.5"
-    checked={rows.length > 0 && rows.every((r) => selectedIds.has(r.id))}
-    onChange={(e) => setSelectedIds(e.target.checked ? new Set(rows.map((r) => r.id)) : new Set())} />
-), width: '40px',
+        <input type="checkbox" className="accent-pink-600 w-3.5 h-3.5"
+          checked={rows.length > 0 && rows.every((r) => selectedIds.has(r.id))}
+          onChange={(e) => setSelectedIds(e.target.checked ? new Set(rows.map((r) => r.id)) : new Set())} />
+      ), width: '40px',
       render: (_, row) => (
         <input type="checkbox" className="accent-pink-600 w-3.5 h-3.5"
           checked={selectedIds.has(row.id)}
@@ -141,6 +178,11 @@ export default function ClassGroupsPage() {
     reset({});
   };
 
+  // ── Generate modal content ────────────────────────────────────────────────
+  const { step, progress, message, result, committed, failed, errors: commitErrors, error: solverError } = scheduler.state;
+
+  const DAY_LABELS: Record<number, string> = { 0: 'Mon', 1: 'Tue', 2: 'Wed', 3: 'Thu', 4: 'Fri', 5: 'Sat', 6: 'Sun' };
+
   return (
     <>
       <PageHeader title="Class Groups" description="Assign teacher-subjects to room schedules and sections" icon={<GraduationCap className="w-5 h-5" />}
@@ -151,6 +193,9 @@ export default function ClassGroupsPage() {
                 Delete ({selectedIds.size})
               </Button>
             )}
+            <Button variant="secondary" size="sm" icon={<Wand2 className="w-3.5 h-3.5" />} onClick={openGenerate}>
+              Auto-Generate
+            </Button>
             <Link href="/class-groups/create">
               <Button size="sm" icon={<Plus className="w-3.5 h-3.5" />}>Add Class Group</Button>
             </Link>
@@ -177,6 +222,7 @@ export default function ClassGroupsPage() {
             />}
       </div>
 
+      {/* ── Manual create/edit modal ── */}
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Edit Class Group' : 'Add Class Group'} size="lg">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <SelectField label="Section" placeholder="Select a section..." options={sectionOptions} error={errors.section_id?.message} {...register('section_id')} />
@@ -187,6 +233,184 @@ export default function ClassGroupsPage() {
             <Button type="submit" loading={createCG.isPending || updateCG.isPending}>{editing ? 'Update' : 'Create'}</Button>
           </div>
         </form>
+      </Modal>
+
+      {/* ── Auto-Generate modal ── */}
+      <Modal open={generateOpen} onClose={closeGenerate} title="Auto-Generate Schedule" size="lg">
+        {/* Step: configure */}
+        {step === 'idle' && (
+          <div className="space-y-4">
+            <p className="text-sm" style={{ color: '#616161' }}>
+              Select the sections to include. The solver will assign each section's subjects to time slots and rooms automatically.
+            </p>
+
+            <div className="flex items-center justify-between text-xs" style={{ color: '#9e9e9e' }}>
+              <span>{selectedSections.size} of {sectionsWithSubjects.length} sections selected</span>
+              <div className="flex gap-3">
+                <button className="hover:underline" style={{ color: '#e91e8c' }}
+                  onClick={() => setSelectedSections(new Set(sectionsWithSubjects.map((s) => s.id!)))}>
+                  Select all
+                </button>
+                <button className="hover:underline" style={{ color: '#9e9e9e' }}
+                  onClick={() => setSelectedSections(new Set())}>
+                  Clear
+                </button>
+              </div>
+            </div>
+
+            <div className="rounded-lg overflow-hidden overflow-y-auto max-h-72" style={{ border: '1.5px solid #e0e0e0' }}>
+              {sectionsWithSubjects.length === 0 ? (
+                <p className="text-center py-6 text-xs" style={{ color: '#9e9e9e' }}>No sections with assigned subjects found.</p>
+              ) : sectionsWithSubjects.map((s) => {
+                const count = sectionSubjects.filter((ss) => ss.section_id === s.id).length;
+                const checked = selectedSections.has(s.id!);
+                return (
+                  <label key={s.id} className="flex items-center gap-3 px-4 py-2.5 cursor-pointer text-sm transition-colors"
+                    style={{ borderBottom: '1px solid #f5f5f5', background: checked ? '#fdf2f8' : '#fff' }}>
+                    <input type="checkbox" className="accent-pink-600 w-3.5 h-3.5 shrink-0"
+                      checked={checked}
+                      onChange={() => setSelectedSections((prev) => {
+                        const n = new Set(prev);
+                        n.has(s.id!) ? n.delete(s.id!) : n.add(s.id!);
+                        return n;
+                      })} />
+                    <span className="flex-1 font-medium">{s.name}</span>
+                    <span className="font-mono text-xs" style={{ color: '#9e9e9e' }}>{s.code}</span>
+                    <span className="badge-blue font-mono text-xs">{count} subject{count !== 1 ? 's' : ''}</span>
+                  </label>
+                );
+              })}
+            </div>
+
+            <div className="flex justify-end gap-2 pt-1">
+              <Button variant="secondary" type="button" onClick={closeGenerate}>Cancel</Button>
+              <Button icon={<Wand2 className="w-3.5 h-3.5" />} onClick={onGenerate} disabled={selectedSections.size === 0}>
+                Generate
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Step: solving */}
+        {step === 'solving' && (
+          <div className="space-y-5 py-4">
+            <div className="flex items-center justify-center">
+              <img src="/images/domi.png" alt="Solving" className="w-16 h-16 object-contain animate-pulse" />
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between text-xs font-mono" style={{ color: '#616161' }}>
+                <span>{message || 'Working…'}</span>
+                <span>{progress}%</span>
+              </div>
+              <div className="rounded-full overflow-hidden h-2" style={{ background: '#f5f5f5' }}>
+                <div className="h-2 rounded-full transition-all duration-500" style={{ width: `${progress}%`, background: '#e91e8c' }} />
+              </div>
+            </div>
+            <p className="text-xs text-center" style={{ color: '#bdbdbd' }}>This may take up to a minute…</p>
+          </div>
+        )}
+
+        {/* Step: review results */}
+        {step === 'review' && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-sm font-medium" style={{ color: '#2e7d32' }}>
+              <CheckCircle2 className="w-4 h-4" />
+              {result.length} class group{result.length !== 1 ? 's' : ''} proposed
+            </div>
+
+            <div className="rounded-lg overflow-hidden overflow-y-auto max-h-72" style={{ border: '1.5px solid #e0e0e0' }}>
+              <table className="w-full text-xs" style={{ borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ background: '#fafafa', borderBottom: '1px solid #f0f0f0' }}>
+                    <th className="text-left px-3 py-2 font-semibold uppercase tracking-wide" style={{ color: '#9e9e9e' }}>Section</th>
+                    <th className="text-left px-3 py-2 font-semibold uppercase tracking-wide" style={{ color: '#9e9e9e' }}>Teacher</th>
+                    <th className="text-left px-3 py-2 font-semibold uppercase tracking-wide" style={{ color: '#9e9e9e' }}>Subject</th>
+                    <th className="text-left px-3 py-2 font-semibold uppercase tracking-wide" style={{ color: '#9e9e9e' }}>Room</th>
+                    <th className="text-left px-3 py-2 font-semibold uppercase tracking-wide" style={{ color: '#9e9e9e' }}>Day / Time</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {result.map((cg, i) => {
+                    const ts = teacherSubjects.find((x) => x.id === cg.teacher_subject_id);
+                    const rs = roomSchedules.find((x) => x.id === cg.room_schedule_id);
+                    const section = sections.find((x) => x.id === cg.section_id);
+                    const teacher = teachers.find((x) => x.id === ts?.teacher_id);
+                    const subject = subjects.find((x) => x.id === ts?.subject_id);
+                    const room = rs?.room ?? rooms.find((x) => x.id === rs?.room_id);
+                    const st = rs?.schedule?.scheduleTimes?.find((t) => t.id === cg.schedule_time_id);
+
+                    return (
+                      <tr key={i} style={{ borderBottom: '1px solid #f5f5f5' }}>
+                        <td className="px-3 py-2">
+                          <span className="badge-green">{section?.name ?? cg.section_id}</span>
+                        </td>
+                        <td className="px-3 py-2" style={{ color: '#333' }}>
+                          {teacher ? `${teacher.first_name} ${teacher.last_name}` : '—'}
+                        </td>
+                        <td className="px-3 py-2" style={{ color: '#333' }}>{subject?.name ?? '—'}</td>
+                        <td className="px-3 py-2" style={{ color: '#333' }}>{room?.name ?? '—'}</td>
+                        <td className="px-3 py-2 font-mono">
+                          {st ? `${DAY_LABELS[st.day] ?? st.day} ${formatTime(st.start_time)}–${formatTime(st.end_time)}` : `slot #${cg.schedule_time_id}`}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-1">
+              <Button variant="secondary" type="button" onClick={closeGenerate}>Discard</Button>
+              <Button icon={<CheckCircle2 className="w-3.5 h-3.5" />} onClick={() => scheduler.commit()}>
+                Commit to Schedule
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Step: committing */}
+        {step === 'committing' && (
+          <div className="flex flex-col items-center gap-4 py-6">
+            <img src="/images/domi.png" alt="Saving" className="w-14 h-14 object-contain animate-pulse" />
+            <p className="text-sm" style={{ color: '#616161' }}>Saving class groups…</p>
+          </div>
+        )}
+
+        {/* Step: done */}
+        {step === 'done' && (
+          <div className="space-y-4 py-2">
+            <div className="flex items-center gap-2 text-sm font-medium" style={{ color: '#2e7d32' }}>
+              <CheckCircle2 className="w-4 h-4" />
+              {committed} class group{committed !== 1 ? 's' : ''} saved successfully
+            </div>
+            {failed > 0 && (
+              <div className="rounded-lg px-3 py-2 text-xs" style={{ background: '#fff8e1', color: '#f57f17', border: '1px solid #ffe082' }}>
+                <div className="flex items-center gap-1.5 font-medium mb-1"><AlertCircle className="w-3.5 h-3.5" />{failed} failed</div>
+                {commitErrors.slice(0, 5).map((e, i) => <div key={i} className="font-mono truncate">{e}</div>)}
+              </div>
+            )}
+            <div className="flex justify-end">
+              <Button onClick={closeGenerate}>Done</Button>
+            </div>
+          </div>
+        )}
+
+        {/* Step: error */}
+        {step === 'error' && (
+          <div className="space-y-4 py-2">
+            <div className="flex items-center gap-2 text-sm font-medium" style={{ color: '#c62828' }}>
+              <XCircle className="w-4 h-4" />
+              Solver error
+            </div>
+            <div className="rounded-lg px-3 py-2 text-xs font-mono" style={{ background: '#fce4ec', color: '#c2185b', border: '1px solid #f48fb1' }}>
+              {solverError}
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="secondary" onClick={closeGenerate}>Close</Button>
+              <Button onClick={() => { scheduler.reset(); }}>Try again</Button>
+            </div>
+          </div>
+        )}
       </Modal>
 
       <ConfirmDialog

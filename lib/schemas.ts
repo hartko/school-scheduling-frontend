@@ -133,6 +133,15 @@ export const sectionSchema = z.object({
 export type Section = z.infer<typeof sectionSchema>;
 export type SectionInput = Omit<Section, 'id'>;
 
+// ─── SectionSubject ───────────────────────────────────────────────────────────
+export interface SectionSubject {
+  id: number;
+  section_id: number;
+  subject_id: number;
+  units?: number | null;
+  subject: Subject;
+}
+
 // ─── TeacherSubject ───────────────────────────────────────────────────────────
 export const teacherSubjectSchema = z.object({
   id: z.coerce.number().optional(),
@@ -151,12 +160,21 @@ export const roomScheduleSchema = z.object({
 export type RoomSchedule = z.infer<typeof roomScheduleSchema>;
 export type RoomScheduleInput = Omit<RoomSchedule, 'id'>;
 
+export interface RoomScheduleDetail {
+  id: number;
+  room_id: number;
+  schedule_id: number;
+  room: Room;
+  schedule: ScheduleDetail;
+}
+
 // ─── ClassGroup ───────────────────────────────────────────────────────────────
 export const classGroupSchema = z.object({
   id: z.coerce.number().optional(),
   teacher_subject_id: z.coerce.number().min(1, 'Teacher Subject is required'),
   room_schedule_id: z.coerce.number().min(1, 'Room Schedule is required'),
   section_id: z.coerce.number().min(1, 'Section is required'),
+  schedule_time_id: z.coerce.number().optional().nullable(),
 });
 export type ClassGroup = z.infer<typeof classGroupSchema>;
 export type ClassGroupInput = Omit<ClassGroup, 'id'>;

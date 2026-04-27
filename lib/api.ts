@@ -1,5 +1,6 @@
 // ─── Base config ─────────────────────────────────────────────────────────────
 const BASE = process.env.NEXT_PUBLIC_API_URL;
+const SCHEDULER = process.env.NEXT_PUBLIC_SCHEDULER_URL;
 
 // Note: room-schedules has /api/ prefix, class-group is singular
 const ENDPOINTS = {
@@ -11,6 +12,7 @@ const ENDPOINTS = {
   teacherSubjects: `${BASE}/teacher-subjects`,
   roomSchedules: `${BASE}/api/room-schedules`,
   classGroups: `${BASE}/class-group`,
+  sectionSubjects: `${BASE}/section-subjects`,
 } as const;
 
 // ─── Generic fetch helpers ────────────────────────────────────────────────────
@@ -112,11 +114,23 @@ export const teacherSubjectsApi = {
 
 // ─── Room Schedules (/api/room-schedules) ─────────────────────────────────────
 export const roomSchedulesApi = {
-  getAll: (params?: { page?: number; limit?: number }) => getAll<PaginatedResponse<RoomSchedule>>(ENDPOINTS.roomSchedules, params),
+  getAll: (params?: { page?: number; limit?: number }) => getAll<PaginatedResponse<RoomScheduleDetail>>(ENDPOINTS.roomSchedules, params),
   getById: (id: number) => get<RoomSchedule>(`${ENDPOINTS.roomSchedules}/${id}`),
   create: (data: RoomScheduleInput) => post<RoomSchedule>(ENDPOINTS.roomSchedules, data),
   update: (id: number, data: Partial<RoomScheduleInput>) => patch<RoomSchedule>(`${ENDPOINTS.roomSchedules}/${id}`, data),
   delete: (id: number) => del<void>(`${ENDPOINTS.roomSchedules}/${id}`),
+};
+
+// ─── Section Subjects ─────────────────────────────────────────────────────────
+export const sectionSubjectsApi = {
+  getAll: () => get<SectionSubject[]>(ENDPOINTS.sectionSubjects),
+  getBySectionId: (sectionId: number) => get<SectionSubject[]>(`${ENDPOINTS.sectionSubjects}?section_id=${sectionId}`),
+  create: (data: { section_id: number; subject_id: number }) => post<SectionSubject>(ENDPOINTS.sectionSubjects, data),
+  bulkAssign: (sectionId: number, assignments: { subject_id: number; units?: number }[]) =>
+    request<SectionSubject[]>(`${ENDPOINTS.sectionSubjects}/${sectionId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ assignments }),
+    }),
 };
 
 // ─── Class Groups (/class-group singular) ─────────────────────────────────────
@@ -128,10 +142,60 @@ export const classGroupsApi = {
   delete: (id: number) => del<void>(`${ENDPOINTS.classGroups}/${id}`),
 };
 
+// ─── Scheduler (Python FastAPI) ──────────────────────────────────────────────
+export type JobStatus = 'pending' | 'running' | 'done' | 'failed';
+
+export interface JobResponse {
+  job_id: string;
+  status: JobStatus;
+  progress: number;
+  message?: string;
+}
+
+export interface ProposedClassGroup {
+  teacher_subject_id: number;
+  section_id: number;
+  room_schedule_id: number;
+  schedule_time_id: number;
+}
+
+export interface ResultResponse {
+  job_id: string;
+  status: JobStatus;
+  class_groups: ProposedClassGroup[];
+  total: number;
+}
+
+export interface CommitResponse {
+  job_id: string;
+  committed: number;
+  failed: number;
+  errors: string[];
+}
+
+export interface ScheduleSubject { subject_id: number; units: number; }
+export interface ScheduleAssignment { section_id: number; subjects: ScheduleSubject[]; }
+export interface GenerateScheduleRequest {
+  assignments: ScheduleAssignment[];
+  config?: { solver_time_limit_seconds?: number; };
+}
+
+export const schedulerApi = {
+  generate: (body: GenerateScheduleRequest) =>
+    post<JobResponse>(`${SCHEDULER}/api/v1/scheduler/generate`, body),
+  getJob: (jobId: string) =>
+    get<JobResponse>(`${SCHEDULER}/api/v1/scheduler/jobs/${jobId}`),
+  getResult: (jobId: string) =>
+    get<ResultResponse>(`${SCHEDULER}/api/v1/scheduler/jobs/${jobId}/result`),
+  commit: (jobId: string) =>
+    post<CommitResponse>(`${SCHEDULER}/api/v1/scheduler/jobs/${jobId}/commit`, {}),
+};
+
 // ─── Local types (mirrors lib/schemas.ts) ─────────────────────────────────────
 import type {
   Teacher, Room, Subject, Schedule, Section,
-  TeacherSubject, RoomSchedule, ClassGroup, ScheduleDetail, ScheduleTime, ScheduleFormInput
+  TeacherSubject, RoomSchedule, RoomScheduleDetail, ClassGroup, ScheduleDetail, ScheduleTime, ScheduleFormInput,
+  SectionSubject,
 } from './schemas';
 
 type PaginatedResponse<T> = {

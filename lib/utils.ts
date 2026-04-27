@@ -5,7 +5,8 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatTime(time: string): string {
+export function formatTime(time: string | undefined | null): string {
+  if (!time) return '';
   const [h, m] = time.split(':');
   const hour = parseInt(h, 10);
   const ampm = hour >= 12 ? 'PM' : 'AM';

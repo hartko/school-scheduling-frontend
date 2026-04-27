@@ -39,4 +39,8 @@ export const queryKeys = {
     list: (p?: object) => ['class-groups', 'list', p] as const,
     detail: (id: string) => ['class-groups', 'detail', id] as const,
   },
+  sectionSubjects: {
+    all: () => ['section-subjects'] as const,
+    bySectionId: (sectionId: number) => ['section-subjects', sectionId] as const,
+  },
 } as const;

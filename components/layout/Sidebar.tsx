@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   Users, Building2, BookOpen, Clock, Layers,
-  UserCheck, CalendarDays, GraduationCap, LogOut, X, LayoutDashboard
+  GraduationCap, LogOut, X, LayoutDashboard
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
@@ -28,8 +28,6 @@ const navGroups = [
   {
     label: 'Assignments',
     items: [
-      { href: '/teacher-subjects', label: 'Teacher Subjects', icon: UserCheck },
-      { href: '/room-schedules', label: 'Room Schedules', icon: CalendarDays },
       { href: '/class-groups', label: 'Class Groups', icon: GraduationCap },
     ],
   },
