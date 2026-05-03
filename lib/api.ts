@@ -2,6 +2,9 @@
 const BASE = process.env.NEXT_PUBLIC_API_URL;
 const SCHEDULER = process.env.NEXT_PUBLIC_SCHEDULER_URL;
 
+if (!BASE) console.error('[api] NEXT_PUBLIC_API_URL is not set — all API calls will fail.');
+if (!SCHEDULER) console.error('[api] NEXT_PUBLIC_SCHEDULER_URL is not set — Auto-Generate will fail.');
+
 // Note: room-schedules has /api/ prefix, class-group is singular
 const ENDPOINTS = {
   teachers: `${BASE}/teachers`,

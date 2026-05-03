@@ -13,8 +13,9 @@ import { useSections } from '@/hooks/useSections';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { SearchableSelectField } from '@/components/ui/SearchableSelectField';
 import { Button } from '@/components/ui/Button';
-import { GraduationCap, ArrowLeft, Plus, Trash2, X } from 'lucide-react';
+import { GraduationCap, ArrowLeft, Plus, Trash2 } from 'lucide-react';
 import Link from 'next/link';
+import type { RoomScheduleDetail } from '@/lib/schemas';
 
 interface PendingRow {
   teacher_subject_id: number;
@@ -38,7 +39,7 @@ export default function ClassGroupCreatePage() {
   const { data: sectionsData } = useSections({ limit: 999 });
 
   const teacherSubjects = tsData?.data ?? [];
-  const roomSchedules = rsData?.data ?? [];
+  const roomSchedules = (rsData?.data ?? []) as unknown as RoomScheduleDetail[];
   const teachers = teachersData?.data ?? [];
   const subjects = subjectsData?.data ?? [];
   const rooms = roomsData?.data ?? [];
@@ -60,7 +61,7 @@ export default function ClassGroupCreatePage() {
     const sched = schedules.find((s) => s.id === rs.schedule_id);
     return {
       value: String(rs.id!),
-      label: `${room?.name ?? '?'} — ${sched?.name ?? '?'}`,
+      label: `${room?.name ?? rs.room?.name ?? '?'} — ${sched?.name ?? rs.schedule?.name ?? '?'}`,
     };
   });
 
@@ -71,7 +72,6 @@ export default function ClassGroupCreatePage() {
 
   // ── Pending rows ──────────────────────────────────────────────────────────────
   const [pending, setPending] = useState<PendingRow[]>([]);
-  const [showForm, setShowForm] = useState(false);
 
   const [sectionId, setSectionId] = useState('');
   const [tsId, setTsId] = useState('');
@@ -80,8 +80,6 @@ export default function ClassGroupCreatePage() {
 
   const onAdd = () => {
     if (!sectionId || !tsId || !rsId) { setFormError('All three fields are required.'); return; }
-
-    // Prevent exact duplicate
     const isDuplicate = pending.some(
       (r) => r.section_id === Number(sectionId) && r.teacher_subject_id === Number(tsId) && r.room_schedule_id === Number(rsId)
     );
@@ -105,14 +103,6 @@ export default function ClassGroupCreatePage() {
   };
 
   const removeRow = (index: number) => setPending((prev) => prev.filter((_, i) => i !== index));
-
-  const closeForm = () => {
-    setShowForm(false);
-    setSectionId('');
-    setTsId('');
-    setRsId('');
-    setFormError('');
-  };
 
   // ── Submit ────────────────────────────────────────────────────────────────────
   const [submitting, setSubmitting] = useState(false);
@@ -152,99 +142,87 @@ export default function ClassGroupCreatePage() {
         }
       />
 
-      <div className="space-y-6">
+      <div className="space-y-4">
+
+        {/* ── Add form — lives OUTSIDE the table so dropdowns are never clipped ── */}
+        <div className="card p-5 space-y-4">
+          <h2 className="text-sm font-semibold" style={{ color: '#333' }}>Add Class Group</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <SearchableSelectField
+              label="Section"
+              placeholder="Search section..."
+              options={sectionOptions}
+              value={sectionId}
+              onChange={setSectionId}
+            />
+            <SearchableSelectField
+              label="Teacher → Subject"
+              placeholder="Search teacher or subject..."
+              options={tsOptions}
+              value={tsId}
+              onChange={setTsId}
+            />
+            <SearchableSelectField
+              label="Room → Schedule"
+              placeholder="Search room or schedule..."
+              options={rsOptions}
+              value={rsId}
+              onChange={setRsId}
+            />
+          </div>
+          {formError && <p className="text-xs font-mono" style={{ color: '#ef5350' }}>{formError}</p>}
+          <div>
+            <Button type="button" size="sm" icon={<Plus className="w-3.5 h-3.5" />} onClick={onAdd}>
+              Add to List
+            </Button>
+          </div>
+        </div>
+
+        {/* ── Pending rows table ── */}
         <div className="card overflow-hidden">
-          <div className="px-6 py-4" style={{ borderBottom: '1px solid #f0f0f0' }}>
-            <h2 className="text-sm font-semibold" style={{ color: '#333' }}>Class Groups</h2>
-            <p className="text-xs mt-0.5" style={{ color: '#9e9e9e' }}>
-              {pending.length === 0 ? 'Add at least one class group.' : `${pending.length} class group${pending.length > 1 ? 's' : ''} pending`}
-            </p>
+          <div className="px-5 py-3.5" style={{ borderBottom: '1px solid #f0f0f0' }}>
+            <h2 className="text-sm font-semibold" style={{ color: '#333' }}>
+              Pending Class Groups
+              {pending.length > 0 && (
+                <span className="ml-2 px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: '#fce4ec', color: '#e91e8c' }}>
+                  {pending.length}
+                </span>
+              )}
+            </h2>
           </div>
 
-          <table className="w-full text-sm table-fixed" style={{ borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid #f0f0f0', background: '#fafafa' }}>
-                <th className="text-left px-4 py-2.5 text-xs font-semibold uppercase tracking-wide" style={{ color: '#9e9e9e', width: '25%' }}>Section</th>
-                <th className="text-left px-4 py-2.5 text-xs font-semibold uppercase tracking-wide" style={{ color: '#9e9e9e', width: '32%' }}>Teacher → Subject</th>
-                <th className="text-left px-4 py-2.5 text-xs font-semibold uppercase tracking-wide" style={{ color: '#9e9e9e', width: '32%' }}>Room → Schedule</th>
-                <th style={{ width: '11%' }} />
-              </tr>
-            </thead>
-            <tbody>
-              {pending.map((row, i) => (
-                <tr key={i} style={{ borderBottom: '1px solid #f5f5f5' }}>
-                  <td className="px-4 py-2.5">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: '#e8f5e9', color: '#2e7d32' }}>{row.sectionLabel}</span>
-                  </td>
-                  <td className="px-4 py-2.5 text-sm">{row.tsLabel}</td>
-                  <td className="px-4 py-2.5 text-sm">{row.rsLabel}</td>
-                  <td className="px-4 py-2.5 text-right">
-                    <button type="button" className="btn-icon" style={{ color: '#ef5350' }} onClick={() => removeRow(i)}>
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </td>
+          {pending.length === 0 ? (
+            <p className="text-center text-sm py-10" style={{ color: '#bdbdbd' }}>
+              No class groups added yet. Use the form above to add one.
+            </p>
+          ) : (
+            <table className="w-full text-sm" style={{ borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid #f0f0f0', background: '#fafafa' }}>
+                  <th className="text-left px-4 py-2.5 text-xs font-semibold uppercase tracking-wide" style={{ color: '#9e9e9e', width: '25%' }}>Section</th>
+                  <th className="text-left px-4 py-2.5 text-xs font-semibold uppercase tracking-wide" style={{ color: '#9e9e9e', width: '35%' }}>Teacher → Subject</th>
+                  <th className="text-left px-4 py-2.5 text-xs font-semibold uppercase tracking-wide" style={{ color: '#9e9e9e', width: '32%' }}>Room → Schedule</th>
+                  <th style={{ width: '8%' }} />
                 </tr>
-              ))}
-
-              {/* Inline form */}
-              {showForm && (
-                <tr style={{ background: '#fdf2f8', borderBottom: '1px solid #f8bbd0' }}>
-                  <td colSpan={4} className="px-4 py-4">
-                    <div className="space-y-3">
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <SearchableSelectField
-                          label="Section"
-                          placeholder="Search section..."
-                          options={sectionOptions}
-                          value={sectionId}
-                          onChange={setSectionId}
-                        />
-                        <SearchableSelectField
-                          label="Teacher → Subject"
-                          placeholder="Search teacher or subject..."
-                          options={tsOptions}
-                          value={tsId}
-                          onChange={setTsId}
-                        />
-                        <SearchableSelectField
-                          label="Room → Schedule"
-                          placeholder="Search room or schedule..."
-                          options={rsOptions}
-                          value={rsId}
-                          onChange={setRsId}
-                        />
-                      </div>
-
-                      {formError && <p className="text-xs font-mono" style={{ color: '#ef5350' }}>{formError}</p>}
-
-                      <div className="flex items-center gap-2">
-                        <Button type="button" size="sm" icon={<Plus className="w-3.5 h-3.5" />} onClick={onAdd}>Add</Button>
-                        <button type="button" className="btn-icon" style={{ color: '#9e9e9e' }} onClick={closeForm}>
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-              )}
-
-              {/* Trigger row */}
-              {!showForm && (
-                <tr>
-                  <td colSpan={4} className="px-4 py-3">
-                    <button
-                      type="button"
-                      className="flex items-center gap-1.5 text-xs font-medium transition-colors"
-                      style={{ color: '#e91e8c' }}
-                      onClick={() => setShowForm(true)}
-                    >
-                      <Plus className="w-3.5 h-3.5" /> Add Class Group
-                    </button>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {pending.map((row, i) => (
+                  <tr key={i} style={{ borderBottom: '1px solid #f5f5f5' }}>
+                    <td className="px-4 py-2.5">
+                      <span className="badge-green text-xs">{row.sectionLabel}</span>
+                    </td>
+                    <td className="px-4 py-2.5 text-sm" style={{ color: '#333' }}>{row.tsLabel}</td>
+                    <td className="px-4 py-2.5 text-sm" style={{ color: '#333' }}>{row.rsLabel}</td>
+                    <td className="px-4 py-2.5 text-right">
+                      <button type="button" className="btn-icon" style={{ color: '#ef5350' }} onClick={() => removeRow(i)}>
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
 
         {submitError && (
