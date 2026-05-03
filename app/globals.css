@@ -167,6 +167,16 @@
     border: 1px solid #eeeeee;
     box-shadow: 0 20px 60px rgba(233,30,140,0.12), 0 4px 16px rgba(0,0,0,0.08);
   }
+  .modal-overlay-full {
+    padding: 0;
+    align-items: stretch;
+  }
+  .modal-overlay-full .modal-box {
+    border-radius: 0;
+    max-height: 100vh;
+    margin: 0;
+    overflow: hidden;
+  }
 }
 
 /* Custom scrollbar */

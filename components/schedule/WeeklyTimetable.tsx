@@ -56,15 +56,22 @@ export function WeeklyTimetable({ scheduleTimes, entries }: WeeklyTimetableProps
   // Build list of unique days present in the schedule times
   const days = [...new Set(scheduleTimes.map((s) => s.day))].sort((a, b) => a - b);
 
-  // Build unique time rows: group by (start_time, end_time, is_break), sorted by start
-  const timeRowMap = new Map<string, { start: string; end: string; isBreak: boolean }>();
+  // Build unique time rows by (start_time, end_time) only — is_break varies per day
+  // (e.g. day 6 marks every slot as break while other days don't)
+  const timeRowMap = new Map<string, { start: string; end: string }>();
   for (const st of scheduleTimes) {
-    const key = `${st.start_time}|${st.end_time}|${st.is_break}`;
+    const key = `${st.start_time}|${st.end_time}`;
     if (!timeRowMap.has(key)) {
-      timeRowMap.set(key, { start: st.start_time, end: st.end_time, isBreak: st.is_break });
+      timeRowMap.set(key, { start: st.start_time, end: st.end_time });
     }
   }
   const timeRows = [...timeRowMap.values()].sort((a, b) => a.start.localeCompare(b.start));
+
+  // Per-cell break lookup: `${day}|${start}|${end}` → is_break
+  const breakLookup = new Map<string, boolean>();
+  for (const st of scheduleTimes) {
+    breakLookup.set(`${st.day}|${st.start_time}|${st.end_time}`, st.is_break);
+  }
 
   // Build lookup: scheduleTimeId → entry
   const entryBySlot = new Map<number, TimetableEntry[]>();
@@ -107,14 +114,13 @@ export function WeeklyTimetable({ scheduleTimes, entries }: WeeklyTimetableProps
           </thead>
           <tbody>
             {timeRows.map((row, ri) => {
-              const isBreak = row.isBreak;
               return (
-                <tr key={ri} style={{ background: isBreak ? '#f9f9f9' : '#fff' }}>
+                <tr key={ri} style={{ background: '#fff' }}>
                   {/* Time label */}
                   <td className="px-2 py-1.5 text-right align-top whitespace-nowrap"
                     style={{
                       fontSize: '11px',
-                      color: isBreak ? '#bdbdbd' : '#757575',
+                      color: '#757575',
                       borderRight: '1px solid #f0f0f0',
                       borderBottom: '1px solid #f5f5f5',
                       fontFamily: 'monospace',
@@ -127,10 +133,11 @@ export function WeeklyTimetable({ scheduleTimes, entries }: WeeklyTimetableProps
 
                   {/* Day columns */}
                   {days.map((day) => {
+                    const isBreakCell = breakLookup.get(`${day}|${row.start}|${row.end}`) ?? false;
                     const slotId = slotIdLookup.get(`${day}|${row.start}|${row.end}`);
                     const cellEntries = slotId !== undefined ? (entryBySlot.get(slotId) ?? []) : [];
 
-                    if (isBreak) {
+                    if (isBreakCell) {
                       return (
                         <td key={day} style={{ borderRight: '1px solid #f0f0f0', borderBottom: '1px solid #f0f0f0', background: '#f5f5f5' }} />
                       );

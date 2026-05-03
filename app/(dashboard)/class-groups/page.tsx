@@ -100,6 +100,8 @@ export default function ClassGroupsPage() {
     scheduler.generate({ assignments });
   };
 
+  const DAY_LABELS: Record<number, string> = { 0: 'Mon', 1: 'Tue', 2: 'Wed', 3: 'Thu', 4: 'Fri', 5: 'Sat', 6: 'Sun' };
+
   // ── Table rows ────────────────────────────────────────────────────────────
   const rows: CGRow[] = (cgData?.data ?? []).map((cg) => {
     const ts = teacherSubjects.find((x) => x.id === cg.teacher_subject_id);
@@ -107,17 +109,16 @@ export default function ClassGroupsPage() {
     const section = sections.find((x) => x.id === cg.section_id);
     const teacher = teachers.find((x) => x.id === ts?.teacher_id);
     const subject = subjects.find((x) => x.id === ts?.subject_id);
-    const room = rooms.find((x) => x.id === rs?.room?.id);
-    const sched = schedules.find((x) => x.id === rs?.schedule_id);
+    const st = rs?.schedule?.scheduleTimes?.find((t) => t.id === cg.schedule_time_id);
     return {
       ...cg,
       id: cg.id!,
       sectionName: section?.name ?? '—',
       teacherName: teacher ? `${teacher.first_name} ${teacher.last_name}` : '—',
       subjectName: subject?.name ?? '—',
-      roomName: rs?.room?.name ?? room?.name ?? '—',
-      day: Number(sched?.day) ?? 0,
-      timeSlot: sched ? `${formatTime(sched.start_time)} – ${formatTime(sched.end_time)}` : '—',
+      roomName: rs?.room?.name ?? '—',
+      day: st?.day ?? -1,
+      timeSlot: st ? `${formatTime(st.start_time)} – ${formatTime(st.end_time)}` : '—',
     };
   });
 
@@ -142,7 +143,7 @@ export default function ClassGroupsPage() {
     { key: 'teacherName', header: 'Teacher', sortable: true },
     { key: 'subjectName', header: 'Subject', sortable: true },
     { key: 'roomName', header: 'Room', sortable: true },
-    { key: 'day', header: 'Day', render: (v) => <span className="badge-blue">{String(v)}</span> },
+    { key: 'day', header: 'Day', render: (v) => <span className="badge-blue">{DAY_LABELS[v as number] ?? '—'}</span> },
     { key: 'timeSlot', header: 'Time', render: (v) => <span className="font-mono text-xs">{String(v)}</span> },
   ];
 
@@ -180,8 +181,6 @@ export default function ClassGroupsPage() {
 
   // ── Generate modal content ────────────────────────────────────────────────
   const { step, progress, message, result, committed, failed, errors: commitErrors, error: solverError } = scheduler.state;
-
-  const DAY_LABELS: Record<number, string> = { 0: 'Mon', 1: 'Tue', 2: 'Wed', 3: 'Thu', 4: 'Fri', 5: 'Sat', 6: 'Sun' };
 
   return (
     <>
@@ -236,7 +235,7 @@ export default function ClassGroupsPage() {
       </Modal>
 
       {/* ── Auto-Generate modal ── */}
-      <Modal open={generateOpen} onClose={closeGenerate} title="Auto-Generate Schedule" size="lg">
+      <Modal open={generateOpen} onClose={closeGenerate} title="Auto-Generate Schedule" size="full">
         {/* Step: configure */}
         {step === 'idle' && (
           <div className="space-y-4">
@@ -258,28 +257,31 @@ export default function ClassGroupsPage() {
               </div>
             </div>
 
-            <div className="rounded-lg overflow-hidden overflow-y-auto max-h-72" style={{ border: '1.5px solid #e0e0e0' }}>
+            <div className="rounded-lg overflow-hidden" style={{ border: '1.5px solid #e0e0e0' }}>
               {sectionsWithSubjects.length === 0 ? (
                 <p className="text-center py-6 text-xs" style={{ color: '#9e9e9e' }}>No sections with assigned subjects found.</p>
-              ) : sectionsWithSubjects.map((s) => {
-                const count = sectionSubjects.filter((ss) => ss.section_id === s.id).length;
-                const checked = selectedSections.has(s.id!);
-                return (
-                  <label key={s.id} className="flex items-center gap-3 px-4 py-2.5 cursor-pointer text-sm transition-colors"
-                    style={{ borderBottom: '1px solid #f5f5f5', background: checked ? '#fdf2f8' : '#fff' }}>
-                    <input type="checkbox" className="accent-pink-600 w-3.5 h-3.5 shrink-0"
-                      checked={checked}
-                      onChange={() => setSelectedSections((prev) => {
-                        const n = new Set(prev);
-                        n.has(s.id!) ? n.delete(s.id!) : n.add(s.id!);
-                        return n;
-                      })} />
-                    <span className="flex-1 font-medium">{s.name}</span>
-                    <span className="font-mono text-xs" style={{ color: '#9e9e9e' }}>{s.code}</span>
-                    <span className="badge-blue font-mono text-xs">{count} subject{count !== 1 ? 's' : ''}</span>
-                  </label>
-                );
-              })}
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                  {sectionsWithSubjects.map((s) => {
+                    const count = sectionSubjects.filter((ss) => ss.section_id === s.id).length;
+                    const checked = selectedSections.has(s.id!);
+                    return (
+                      <label key={s.id} className="flex items-center gap-3 px-4 py-2.5 cursor-pointer text-sm transition-colors"
+                        style={{ borderBottom: '1px solid #f5f5f5', borderRight: '1px solid #f5f5f5', background: checked ? '#fdf2f8' : '#fff' }}>
+                        <input type="checkbox" className="accent-pink-600 w-3.5 h-3.5 shrink-0"
+                          checked={checked}
+                          onChange={() => setSelectedSections((prev) => {
+                            const n = new Set(prev);
+                            n.has(s.id!) ? n.delete(s.id!) : n.add(s.id!);
+                            return n;
+                          })} />
+                        <span className="flex-1 font-medium truncate">{s.name}</span>
+                        <span className="badge-blue font-mono text-xs shrink-0">{count}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             <div className="flex justify-end gap-2 pt-1">
@@ -312,54 +314,58 @@ export default function ClassGroupsPage() {
 
         {/* Step: review results */}
         {step === 'review' && (
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 text-sm font-medium" style={{ color: '#2e7d32' }}>
+          <div className="flex flex-col h-full gap-4">
+            <div className="flex items-center gap-2 text-sm font-medium shrink-0" style={{ color: '#2e7d32' }}>
               <CheckCircle2 className="w-4 h-4" />
               {result.length} class group{result.length !== 1 ? 's' : ''} proposed
             </div>
 
-            <div className="rounded-lg overflow-hidden overflow-y-auto max-h-72" style={{ border: '1.5px solid #e0e0e0' }}>
+            <div className="flex-1 rounded-lg overflow-hidden flex flex-col min-h-0" style={{ border: '1.5px solid #e0e0e0' }}>
               <table className="w-full text-xs" style={{ borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ background: '#fafafa', borderBottom: '1px solid #f0f0f0' }}>
-                    <th className="text-left px-3 py-2 font-semibold uppercase tracking-wide" style={{ color: '#9e9e9e' }}>Section</th>
-                    <th className="text-left px-3 py-2 font-semibold uppercase tracking-wide" style={{ color: '#9e9e9e' }}>Teacher</th>
-                    <th className="text-left px-3 py-2 font-semibold uppercase tracking-wide" style={{ color: '#9e9e9e' }}>Subject</th>
-                    <th className="text-left px-3 py-2 font-semibold uppercase tracking-wide" style={{ color: '#9e9e9e' }}>Room</th>
-                    <th className="text-left px-3 py-2 font-semibold uppercase tracking-wide" style={{ color: '#9e9e9e' }}>Day / Time</th>
+                    <th className="text-left px-4 py-3 font-semibold uppercase tracking-wide sticky top-0" style={{ color: '#9e9e9e', background: '#fafafa' }}>Section</th>
+                    <th className="text-left px-4 py-3 font-semibold uppercase tracking-wide sticky top-0" style={{ color: '#9e9e9e', background: '#fafafa' }}>Teacher</th>
+                    <th className="text-left px-4 py-3 font-semibold uppercase tracking-wide sticky top-0" style={{ color: '#9e9e9e', background: '#fafafa' }}>Subject</th>
+                    <th className="text-left px-4 py-3 font-semibold uppercase tracking-wide sticky top-0" style={{ color: '#9e9e9e', background: '#fafafa' }}>Room</th>
+                    <th className="text-left px-4 py-3 font-semibold uppercase tracking-wide sticky top-0" style={{ color: '#9e9e9e', background: '#fafafa' }}>Day / Time</th>
                   </tr>
                 </thead>
-                <tbody>
-                  {result.map((cg, i) => {
-                    const ts = teacherSubjects.find((x) => x.id === cg.teacher_subject_id);
-                    const rs = roomSchedules.find((x) => x.id === cg.room_schedule_id);
-                    const section = sections.find((x) => x.id === cg.section_id);
-                    const teacher = teachers.find((x) => x.id === ts?.teacher_id);
-                    const subject = subjects.find((x) => x.id === ts?.subject_id);
-                    const room = rs?.room ?? rooms.find((x) => x.id === rs?.room_id);
-                    const st = rs?.schedule?.scheduleTimes?.find((t) => t.id === cg.schedule_time_id);
-
-                    return (
-                      <tr key={i} style={{ borderBottom: '1px solid #f5f5f5' }}>
-                        <td className="px-3 py-2">
-                          <span className="badge-green">{section?.name ?? cg.section_id}</span>
-                        </td>
-                        <td className="px-3 py-2" style={{ color: '#333' }}>
-                          {teacher ? `${teacher.first_name} ${teacher.last_name}` : '—'}
-                        </td>
-                        <td className="px-3 py-2" style={{ color: '#333' }}>{subject?.name ?? '—'}</td>
-                        <td className="px-3 py-2" style={{ color: '#333' }}>{room?.name ?? '—'}</td>
-                        <td className="px-3 py-2 font-mono">
-                          {st ? `${DAY_LABELS[st.day] ?? st.day} ${formatTime(st.start_time)}–${formatTime(st.end_time)}` : `slot #${cg.schedule_time_id}`}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
               </table>
+              <div className="overflow-y-auto flex-1">
+                <table className="w-full text-xs" style={{ borderCollapse: 'collapse' }}>
+                  <tbody>
+                    {result.map((cg, i) => {
+                      const ts = teacherSubjects.find((x) => x.id === cg.teacher_subject_id);
+                      const rs = roomSchedules.find((x) => x.id === cg.room_schedule_id);
+                      const section = sections.find((x) => x.id === cg.section_id);
+                      const teacher = teachers.find((x) => x.id === ts?.teacher_id);
+                      const subject = subjects.find((x) => x.id === ts?.subject_id);
+                      const room = rs?.room ?? rooms.find((x) => x.id === rs?.room_id);
+                      const st = rs?.schedule?.scheduleTimes?.find((t) => t.id === cg.schedule_time_id);
+
+                      return (
+                        <tr key={i} style={{ borderBottom: '1px solid #f5f5f5' }}>
+                          <td className="px-4 py-2.5">
+                            <span className="badge-green">{section?.name ?? cg.section_id}</span>
+                          </td>
+                          <td className="px-4 py-2.5" style={{ color: '#333' }}>
+                            {teacher ? `${teacher.first_name} ${teacher.last_name}` : '—'}
+                          </td>
+                          <td className="px-4 py-2.5" style={{ color: '#333' }}>{subject?.name ?? '—'}</td>
+                          <td className="px-4 py-2.5" style={{ color: '#333' }}>{room?.name ?? '—'}</td>
+                          <td className="px-4 py-2.5 font-mono">
+                            {st ? `${DAY_LABELS[st.day] ?? st.day} ${formatTime(st.start_time)}–${formatTime(st.end_time)}` : `slot #${cg.schedule_time_id}`}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
-            <div className="flex justify-end gap-2 pt-1">
+            <div className="flex justify-end gap-2 shrink-0">
               <Button variant="secondary" type="button" onClick={closeGenerate}>Discard</Button>
               <Button icon={<CheckCircle2 className="w-3.5 h-3.5" />} onClick={() => scheduler.commit()}>
                 Commit to Schedule

@@ -8,7 +8,7 @@ interface ModalProps {
   onClose: () => void;
   title: string;
   children: React.ReactNode;
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+  size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
 }
 
 export function Modal({ open, onClose, title, children, size = 'md' }: ModalProps) {
@@ -20,18 +20,24 @@ export function Modal({ open, onClose, title, children, size = 'md' }: ModalProp
 
   if (!open) return null;
 
-  const sizeClass = { sm: 'max-w-sm', md: 'max-w-lg', lg: 'max-w-2xl', xl: 'max-w-5xl' }[size];
+  const isFull = size === 'full';
+  const sizeClass = isFull
+    ? 'w-full h-full max-w-none max-h-none rounded-none'
+    : { sm: 'max-w-sm', md: 'max-w-lg', lg: 'max-w-2xl', xl: 'max-w-5xl' }[size];
 
   return (
-    <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className={cn('modal-box animate-fade-in', sizeClass)}>
-        <div className="flex items-center justify-between p-5 border-b border-ink-100">
+    <div
+      className={cn('modal-overlay', isFull && 'modal-overlay-full')}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className={cn('modal-box animate-fade-in flex flex-col', sizeClass)}>
+        <div className="flex items-center justify-between p-5 border-b border-ink-100 shrink-0">
           <h2 className="section-title">{title}</h2>
           <button onClick={onClose} className="btn-icon">
             <X className="w-4 h-4" />
           </button>
         </div>
-        <div className="p-5">{children}</div>
+        <div className={cn('p-5', isFull && 'flex-1 overflow-y-auto')}>{children}</div>
       </div>
     </div>
   );

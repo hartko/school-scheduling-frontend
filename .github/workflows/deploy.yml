@@ -30,6 +30,8 @@ jobs:
         run: pnpm run build
         env:
           NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+          NEXT_PUBLIC_SCHEDULER_URL: ${{ secrets.NEXT_PUBLIC_SCHEDULER_URL }}
+
 
       - name: Trigger Vercel Deploy
         run: curl "${{ secrets.VERCEL_DEPLOY_HOOK }}"
