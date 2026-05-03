@@ -320,49 +320,50 @@ export default function ClassGroupsPage() {
               {result.length} class group{result.length !== 1 ? 's' : ''} proposed
             </div>
 
-            <div className="flex-1 rounded-lg overflow-hidden flex flex-col min-h-0" style={{ border: '1.5px solid #e0e0e0' }}>
-              <table className="w-full text-xs" style={{ borderCollapse: 'collapse' }}>
+            <div className="flex-1 rounded-lg overflow-y-auto min-h-0" style={{ border: '1.5px solid #e0e0e0' }}>
+              <table className="w-full text-xs" style={{ borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+                <colgroup>
+                  <col style={{ width: '22%' }} />
+                  <col style={{ width: '20%' }} />
+                  <col style={{ width: '27%' }} />
+                  <col style={{ width: '13%' }} />
+                  <col style={{ width: '18%' }} />
+                </colgroup>
                 <thead>
                   <tr style={{ background: '#fafafa', borderBottom: '1px solid #f0f0f0' }}>
-                    <th className="text-left px-4 py-3 font-semibold uppercase tracking-wide sticky top-0" style={{ color: '#9e9e9e', background: '#fafafa' }}>Section</th>
-                    <th className="text-left px-4 py-3 font-semibold uppercase tracking-wide sticky top-0" style={{ color: '#9e9e9e', background: '#fafafa' }}>Teacher</th>
-                    <th className="text-left px-4 py-3 font-semibold uppercase tracking-wide sticky top-0" style={{ color: '#9e9e9e', background: '#fafafa' }}>Subject</th>
-                    <th className="text-left px-4 py-3 font-semibold uppercase tracking-wide sticky top-0" style={{ color: '#9e9e9e', background: '#fafafa' }}>Room</th>
-                    <th className="text-left px-4 py-3 font-semibold uppercase tracking-wide sticky top-0" style={{ color: '#9e9e9e', background: '#fafafa' }}>Day / Time</th>
+                    {(['Section', 'Teacher', 'Subject', 'Room', 'Day / Time'] as const).map((h) => (
+                      <th key={h} className="text-left px-4 py-3 font-semibold uppercase tracking-wide" style={{ color: '#9e9e9e', background: '#fafafa', position: 'sticky', top: 0, zIndex: 1 }}>{h}</th>
+                    ))}
                   </tr>
                 </thead>
-              </table>
-              <div className="overflow-y-auto flex-1">
-                <table className="w-full text-xs" style={{ borderCollapse: 'collapse' }}>
-                  <tbody>
-                    {result.map((cg, i) => {
-                      const ts = teacherSubjects.find((x) => x.id === cg.teacher_subject_id);
-                      const rs = roomSchedules.find((x) => x.id === cg.room_schedule_id);
-                      const section = sections.find((x) => x.id === cg.section_id);
-                      const teacher = teachers.find((x) => x.id === ts?.teacher_id);
-                      const subject = subjects.find((x) => x.id === ts?.subject_id);
-                      const room = rs?.room ?? rooms.find((x) => x.id === rs?.room_id);
-                      const st = rs?.schedule?.scheduleTimes?.find((t) => t.id === cg.schedule_time_id);
+                <tbody>
+                  {result.map((cg, i) => {
+                    const ts = teacherSubjects.find((x) => x.id === cg.teacher_subject_id);
+                    const rs = roomSchedules.find((x) => x.id === cg.room_schedule_id);
+                    const section = sections.find((x) => x.id === cg.section_id);
+                    const teacher = teachers.find((x) => x.id === ts?.teacher_id);
+                    const subject = subjects.find((x) => x.id === ts?.subject_id);
+                    const room = rs?.room ?? rooms.find((x) => x.id === rs?.room_id);
+                    const st = rs?.schedule?.scheduleTimes?.find((t) => t.id === cg.schedule_time_id);
 
-                      return (
-                        <tr key={i} style={{ borderBottom: '1px solid #f5f5f5' }}>
-                          <td className="px-4 py-2.5">
-                            <span className="badge-green">{section?.name ?? cg.section_id}</span>
-                          </td>
-                          <td className="px-4 py-2.5" style={{ color: '#333' }}>
-                            {teacher ? `${teacher.first_name} ${teacher.last_name}` : '—'}
-                          </td>
-                          <td className="px-4 py-2.5" style={{ color: '#333' }}>{subject?.name ?? '—'}</td>
-                          <td className="px-4 py-2.5" style={{ color: '#333' }}>{room?.name ?? '—'}</td>
-                          <td className="px-4 py-2.5 font-mono">
-                            {st ? `${DAY_LABELS[st.day] ?? st.day} ${formatTime(st.start_time)}–${formatTime(st.end_time)}` : `slot #${cg.schedule_time_id}`}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                    return (
+                      <tr key={i} style={{ borderBottom: '1px solid #f5f5f5' }}>
+                        <td className="px-4 py-2.5 truncate">
+                          <span className="badge-green truncate max-w-full inline-block">{section?.name ?? cg.section_id}</span>
+                        </td>
+                        <td className="px-4 py-2.5 truncate" style={{ color: '#333' }}>
+                          {teacher ? `${teacher.first_name} ${teacher.last_name}` : '—'}
+                        </td>
+                        <td className="px-4 py-2.5 truncate" style={{ color: '#333' }}>{subject?.name ?? '—'}</td>
+                        <td className="px-4 py-2.5 truncate" style={{ color: '#333' }}>{room?.name ?? '—'}</td>
+                        <td className="px-4 py-2.5 font-mono whitespace-nowrap" style={{ color: '#333' }}>
+                          {st ? `${DAY_LABELS[st.day] ?? st.day} ${formatTime(st.start_time)}–${formatTime(st.end_time)}` : `slot #${cg.schedule_time_id}`}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
 
             <div className="flex justify-end gap-2 shrink-0">
